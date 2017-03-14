@@ -59,7 +59,7 @@ pip install -e '.[extra1, extra2]'
 For example to install gym and chainer:
 
 ```
-pip install -e '.[gym, chainer]'
+pip install -e '.[gym]'
 ```
 
 Or to install all extras:
@@ -70,10 +70,7 @@ pip install -e '.[all]'
 
 The following extras are available:
 - `gym`: [OpenAI Gym](https://gym.openai.com/) is an interface to a wide range of reinforcement learning environments. Installing this extra enables the Atari example agents in [samples/atari](samples/atari) to train on the gym environments. *Note that OpenAI gym atari environments are currently not available on Windows.*
-- `chainer`: [Chainer](http://chainer.org/) is a deep learning framework developed by Preferred Networks Inc. It enables the chainer example agents in [samples](samples).
 - `tensorflow`: [TensorFlow](https://www.tensorflow.org/) is a popular deep learning framework developed by Google. In our examples it enables visualizations through [TensorBoard](https://www.tensorflow.org/get_started/summaries_and_tensorboard).
-
-To run CNTK example agents you need to install the [CNTK](https://github.com/Microsoft/CNTK) deep learning framework. Details are provided here: [Run a CNTK reinforcement learning agent](#run-a-cntk-reinforcement-learning-agent).
 
 
 # Getting started
