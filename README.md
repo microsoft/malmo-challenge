@@ -93,19 +93,6 @@ The provided sample code uses the `malmopy` experimentation framework. Learn abo
 framework and how to write your first agent in the [malmopy/README.md#write-your-first-agent](malmopy/README.md).
 
 
-# Next steps
-
-## Run an experiment in Docker on Azure
-
-Docker is a virtualization platform that makes it easy to deploy software with all its dependencies. 
-We use docker to run experiments locally or in the cloud. Details on how to run an example experiment using docker are in the [docker README](docker/README.md).
-
-## More sample code
-
-The framework is entirely written in Python and support multiple environments, 
-agents and machine learning backends. Find out more by studying our [sample code](samples/README.md).
-
-
 ## Resources
 
 - [Malmo Platform Tutorial](https://github.com/Microsoft/malmo/blob/master/Malmo/samples/Python_examples/Tutorial.pdf)
