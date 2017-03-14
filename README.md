@@ -23,7 +23,6 @@ We will consider the version of the code on branch master at the time of the sub
 - [Getting started](#getting-started)
   - [Play the challenge task](#play-the-challenge-task)
   - [Run your first experiment](#run-your-first-experiment)
-  - [Write your first agent](#write-your-first-agent)
 
 - [Next steps](#next-steps)
   - [Run an experiment in Docker on Azure](#run-an-experiment-in-docker-on-azure)
@@ -86,12 +85,6 @@ The challenge task takes the form of a mini game, called Pig Chase. Learn about 
 ## Run your first experiment
 
 See how to [run your first baseline experiment](ai_challenge/pig_chase/README.md#run-your-first-experiment) on the [Pig Chase Challenge page](ai_challenge/pig_chase/README.md).
-
-## Write your first agent
-
-The provided sample code uses the `malmopy` experimentation framework. Learn about the 
-framework and how to write your first agent in the [malmopy/README.md#write-your-first-agent](malmopy/README.md).
-
 
 # Next steps
 
