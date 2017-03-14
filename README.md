@@ -39,7 +39,7 @@ We will consider the version of the code on branch master at the time of the sub
 ## Minimal installation
 
 ```
-pip install -e https://github.com/Microsoft/malmo-challenge
+pip install -e git+https://github.com/Microsoft/malmo-challenge#egg=malmopy
 ```
 
 or 
@@ -47,7 +47,7 @@ or
 ```
 git clone https://github.com/Microsoft/malmo-challenge
 cd malmo-challenge
-pip install -e '.'
+pip install -e .
 ```
 
 ## Optional extensions
