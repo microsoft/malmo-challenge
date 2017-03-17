@@ -59,7 +59,7 @@ ENV PYTHONPATH /root/Malmo/Python_Examples
 # add and install malmopy, malmo challenge task and samples
 WORKDIR /root
 RUN git clone https://github.com/Microsoft/malmo-challenge.git
-git checkout tags/$MALMOPY_VERSION master
+RUN git checkout tags/$MALMOPY_VERSION master
 
 WORKDIR /root/malmo-challenge
 RUN pip install -e '.[all]'
