@@ -34,12 +34,10 @@ This will provide a script / instructions on how to prepare your environment to 
 Build the required docker images:
 ```
 cd docker
-docker build -t malmo:latest malmo
-docker build -t malmopy-cntk-cpu-py27:latest malmopy-cntk-cpu-py27
+docker build malmo -t malmo:latest
+docker build malmopy-cntk-cpu-py27 -t malmopy-cntk-cpu-py27:latest
 
 ```
-Note: if you have made local changes and want to rebuild a docker image, you can use the flag `--no-cache`, 
-e.g., `docker build ---no-cache -t malmo:latest malmo`.
 
 Check to make sure that the images have been compiled:
 ```
@@ -61,6 +59,38 @@ cd malmopy-ai-challenge
 docker-compose up
 ```
 
+The experiment is set up to start a tensorboard process alongside the experiment.
+You can view it by pointing your browser to http://127.0.0.1:6006.
+
+## Write your own
+
+The provided docker files load malmopy and sample code directly from the
+`malmo-challenge` git repository. To include your own code, create a file
+called `Dockerfile` with the following content:
+
+```
+FROM malmopy-cntk-cpu-py27:latest
+
+# add your own experiment code here
+# ADD copies content from your local machine into the docker image
+ADD ai_challenge/pig_chase /local/malmo-challenge/ai_challenge/pig_chase
+```
+
+Build this new image using:
+```
+docker build . -t my_malmo_experiment:latest
+```
+
+Point the `agents` service in `docker-compose.py` to the new image by replacing
+`image: malmopy-cntk-cpu-py27:latest` with the name of the image you have just
+built (e.g., `image:my_malmo_experiment:latest`). Also check if the working
+directory or command need to be changed.
+
+Then run the new experiment:
+```
+docker-compose up
+```
+
 ## Cleaning up
 
 If you are using a docker machine on Azure, make sure to shutdown and decomission 
@@ -68,7 +98,7 @@ the machine when your experiments have completed, to avoid incurring costs.
 
 To shut a machine down:
 ```
-docker-machine kill <machine-name>
+docker-machine stop <machine-name>
 ```
 
 To remove (decomission) a machine:
