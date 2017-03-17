@@ -26,7 +26,7 @@ setup(
     packages=[package for package in find_packages()
               if package.startswith('malmopy')],
 
-    url='https://github.com/Microsoft/malmo-collab',
+    url='https://github.com/Microsoft/malmo-challenge',
     license='MIT',
     author='Microsoft Research Cambridge',
     author_email='',
