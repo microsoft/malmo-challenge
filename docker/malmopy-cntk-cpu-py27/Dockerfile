@@ -51,7 +51,6 @@ ENV PATH=/root/anaconda3/envs/cntk-py27/bin:$PATH
 RUN /root/anaconda3/envs/cntk-py27/bin/pip install --upgrade pip
 
 # download and unpack Malmo
-
 WORKDIR /root
 RUN wget https://github.com/Microsoft/malmo/releases/download/$MALMO_VERSION/Malmo-$MALMO_VERSION-Linux-Ubuntu-16.04-64bit_withBoost.zip && \
     unzip Malmo-$MALMO_VERSION-Linux-Ubuntu-16.04-64bit_withBoost.zip && \
