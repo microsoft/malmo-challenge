@@ -203,8 +203,6 @@ class QLearnerAgent(BaseAgent):
         self._stats_loss = []
 
     def act(self, new_state, reward, done, is_training=False):
-        new_state_unbound = np.copy(new_state)
-
         # associate the previous s,a with reward, done
         # Check if previous trackers are non None
         if self._tracker is not None:
@@ -212,15 +210,13 @@ class QLearnerAgent(BaseAgent):
                          reward, new_state, done)
 
         # update the model if needed
-        if is_training \
-                and (self._actions_taken >= self._train_after) \
-                and (len(self._memory) >= self._minibatch_size):
+        if is_training and (self._actions_taken >= self._train_after):
             self.learn()
 
         # Append the new state to the history
         if done:
             self._history.reset()
-        self._history.append(new_state_unbound)
+        self._history.append(new_state)
 
         # select the next action
         if self._explorer.is_exploring(self._actions_taken):
@@ -233,7 +229,7 @@ class QLearnerAgent(BaseAgent):
             self._stats_stddev_qvalues.append(np.std(q_values))
 
         # record for use in the next step
-        self._tracker = Tracker(new_state_unbound, new_action)
+        self._tracker = Tracker(new_state, new_action)
         self._actions_taken += 1
 
         self._stats_rewards.append(reward)
@@ -248,7 +244,7 @@ class QLearnerAgent(BaseAgent):
     def learn(self):
         if (self._actions_taken % self._train_frequency) == 0:
             minibatch = self._memory.minibatch(self._minibatch_size)
-            q_t_target = self._compute_q(*minibatch).astype(dtype=np.float32)
+            q_t_target = self._compute_q(*minibatch)
 
             self._model.train(minibatch[0], q_t_target, minibatch[1])
             self._stats_loss.append(self._model.loss_val)
@@ -280,4 +276,5 @@ class QLearnerAgent(BaseAgent):
         q_hat = self._model.evaluate(posts, model=QModel.TARGET_NETWORK)
         q_hat_eval = q_hat[range(len(q_hat)), q_hat.argmax(axis=1)]
 
-        return (1 - terminals) * (self._gamma * q_hat_eval) + rewards
+        q_targets = (1 - terminals) * (self._gamma * q_hat_eval) + rewards
+        return np.array(q_targets, dtype=np.float32)
