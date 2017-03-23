@@ -36,13 +36,9 @@ from malmopy.agent import QLearnerAgent, TemporalMemory
 try:
     from malmopy.visualization.tensorboard import TensorboardVisualizer
     from malmopy.visualization.tensorboard.cntk import CntkConverter
-
-    TENSORBOARD_AVAILABLE = True
 except ImportError:
     print('Cannot import tensorboard, using ConsoleVisualizer.')
     from malmopy.visualization import ConsoleVisualizer
-
-    TENSORBOARD_AVAILABLE = False
 
 # Enforce path
 sys.path.insert(0, os.getcwd())
@@ -152,7 +148,7 @@ if __name__ == '__main__':
     args = arg_parser.parse_args()
 
     logdir = path.join('results/pig_chase/dqn', datetime.utcnow().isoformat())
-    if TENSORBOARD_AVAILABLE:
+    if 'malmopy.visualization.tensorboard' in sys.modules:
         visualizer = TensorboardVisualizer()
         visualizer.initialize(logdir, None)
 
