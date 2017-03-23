@@ -91,9 +91,9 @@ def agent_factory(name, role, baseline_agent, clients, max_epochs,
 
     else:
 
-        if type == 'tabq':
+        if baseline_agent == 'tabq':
             agent = TabularQLearnerAgent(name, visualizer)
-        elif type == 'astar':
+        elif baseline_agent == 'astar':
             agent = FocusedAgent(name, ENV_TARGET_NAMES[0])
         else:
             agent = RandomAgent(name, env.available_actions)
