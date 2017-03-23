@@ -27,7 +27,7 @@ To familiarize yourself with the game, we recommend that you play it yourself. T
 ### Steps
 
 * Start two instances of the Malmo Client on ports `10000` and `10001`
-* `cd malmo-collab/ai_challenge/pig_chase`
+* `cd malmo-challenge/ai_challenge/pig_chase`
 * `python pig_chase_human_vs_agent.py`
 
 Wait for a few seconds for the human player interface to appear.
