@@ -1,6 +1,6 @@
 # The Malmo Collaborative AI Challenge
 
-This repository contains the task definition and example for the [Malmo Collaborative AI Challenge](https://www.microsoft.com/en-us/research/academic-program/collaborative-ai-challenge/). 
+This repository contains the task definition and example code for the [Malmo Collaborative AI Challenge](https://www.microsoft.com/en-us/research/academic-program/collaborative-ai-challenge/). 
 <!-- ## Purpose -->
 This challenge is organized to encourage research in collaborative AI - to work towards AI agents 
 that learn to collaborate to solve problems and achieve goals. 
