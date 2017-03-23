@@ -15,7 +15,6 @@
 # SOFTWARE.
 # ===================================================================================================================
 
-import sys
 from argparse import ArgumentParser
 from datetime import datetime
 from subprocess import Popen
@@ -26,12 +25,16 @@ from malmopy.environment.gym import GymEnvironment
 try:
     from malmopy.visualization.tensorboard import TensorboardVisualizer
     from malmopy.visualization.tensorboard.cntk import CntkConverter
+
+    TENSORBOARD_AVAILABLE = True
 except ImportError:
     print('Cannot import tensorboard, using ConsoleVisualizer.')
     from malmopy.visualization import ConsoleVisualizer
 
+    TENSORBOARD_AVAILABLE = False
 
-DQN_FOLDER = 'results/baselines/%s/dqn/%s-%s'
+
+ROOT_FOLDER = 'results/baselines/%s/dqn/%s-%s'
 EPOCH_SIZE = 250000
 
 
@@ -100,19 +103,19 @@ if __name__ == '__main__':
     arg_parser.add_argument('-d', '--device', type=int, default=-1,
                             help='GPU device on which to run the experiment.')
     arg_parser.add_argument('-r', '--record', action='store_true',
-                            help='Indicate if Gym environment should be recorded')
+                            help='Setting this will record runs')
     arg_parser.add_argument('-e', '--epochs', type=int, default=50,
-                            help='Number of epochs to run. One epoch is 250k actions.')
+                            help='Number of epochs. One epoch is 250k actions.')
     arg_parser.add_argument('-p', '--port', type=int, default=6006,
                             help='Port for running tensorboard.')
-    arg_parser.add_argument('env', type=str, metavar='environment', nargs='?', default='Breakout-v3',
+    arg_parser.add_argument('env', type=str, metavar='environment',
+                            nargs='?', default='Breakout-v3',
                             help='Gym environment to run')
 
     args = arg_parser.parse_args()
 
-    logdir = DQN_FOLDER % (args.env, args.backend,
-                           datetime.utcnow().isoformat())
-    if 'malmopy.visualization.tensorboard' in sys.modules:
+    logdir = ROOT_FOLDER % (args.env, args.backend, datetime.utcnow().isoformat())
+    if TENSORBOARD_AVAILABLE:
         visualizer = TensorboardVisualizer()
         visualizer.initialize(logdir, None)
         print('Starting tensorboard ...')
