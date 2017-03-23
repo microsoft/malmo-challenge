@@ -34,6 +34,51 @@ from malmopy.agent.gui import GuiAgent
 P_FOCUSED = .75
 CELL_WIDTH = 33
 
+class TabularQLearnerAgent(BaseAgent):
+    """Pig Chase agent - uses Tabular Q-Learning."""
+
+    def __init__(self, name, visualizer=None):
+        nb_actions = len(ENV_ACTIONS)
+        super(TabularQLearnerAgent, self).__init__(name, nb_actions, visualizer = visualizer)
+        self._QTable = {}
+        self._last_hash = None
+        self._last_action_index = None
+        self._learning_rate = 0.05
+        self._discount_rate = 0.95
+
+    def _get_state_hash(self, state):
+        entities = state[1]
+        hash = ""
+        for ent in sorted(entities, key=lambda x: x['name']):
+            x = str(int(ent['x']))
+            z = str(int(ent['z']))
+            yaw = str(int(ent['yaw']/90.0) % 4)
+            hash += x + "_" + z + "_" + yaw + ":" if ent['name'] in ENV_AGENT_NAMES else x + "_" + z + ":" if ent['name'] in ENV_TARGET_NAMES else ""
+        return hash
+
+    def act(self, new_state, reward, done, is_training=False):
+        new_hash = self._get_state_hash(new_state)
+        if not new_hash in self._QTable:
+            self._QTable[new_hash] = [0.0 for act in ENV_ACTIONS]
+        new_qvalues = self._QTable[new_hash]
+        new_max_q = max(new_qvalues)
+
+        # Update step:
+        if self._last_hash is not None:
+            old_qvalues = self._QTable[self._last_hash]
+            if not done:
+                delta = self._learning_rate * ((reward + self._discount_rate * new_max_q) - old_qvalues[self._last_action_index])
+                old_qvalues[self._last_action_index] += delta
+            else:
+                old_qvalues[self._last_action_index] = reward
+            self._QTable[self._last_hash] = old_qvalues
+
+        # Choose best action for this step:
+        top_q_indices = [i for i, val in enumerate(new_qvalues) if val == new_max_q]
+        self._last_action_index = np.random.choice(top_q_indices)
+        #action = ENV_ACTIONS[self._last_action_index]
+        self._last_hash = new_hash
+        return self._last_action_index
 
 class PigChaseQLearnerAgent(QLearnerAgent):
     """A thin wrapper around QLearnerAgent that normalizes rewards to [-1,1]"""
