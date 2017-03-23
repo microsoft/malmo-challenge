@@ -20,7 +20,11 @@ from __future__ import division
 import sys
 import time
 from collections import namedtuple
-from tkinter import ttk, Canvas, W
+if sys.version_info.major == 2:
+    from Tkinter import Canvas, W
+    import ttk
+else:
+    from tkinter import ttk, Canvas, W
 
 import numpy as np
 from common import visualize_training, Entity, ENV_TARGET_NAMES, ENV_ENTITIES, ENV_AGENT_NAMES,\
