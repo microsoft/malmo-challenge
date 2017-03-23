@@ -19,5 +19,6 @@ from __future__ import absolute_import
 
 from .agent import BaseAgent, RandomAgent, ConsoleAgent, ReplayMemory
 from .astar import AStarAgent
+from .qlearner import QLearnerAgent, History, ReplayMemory, TemporalMemory
 
 __all__ = ['agent', 'astar', 'explorer']
