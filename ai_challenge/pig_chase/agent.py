@@ -263,7 +263,9 @@ class PigChaseHumanAgent(GuiAgent):
             self._on_episode_end()
 
         # build symbolic view
-        board, _ = self._env._internal_symbolic_builder.build(self._env)
+        board = None
+        if self._env is not None:
+            board, _ = self._env._internal_symbolic_builder.build(self._env)
         if board is not None:
             board = board.T
             self._symbolic_view.delete('all')  # Remove all previous items from Tkinter tracking
@@ -410,10 +412,20 @@ class PigChaseHumanAgent(GuiAgent):
         self._on_experiment_updated(None, 0, self._env.done)
 
     def _on_episode_end(self):
-        self._episode_has_started = False
-        self._episode_has_ended = True
+        # do a turn to ensure we get the final reward and observation
+        no_op_action = 0
+        _, reward, done = self._env.do(no_op_action)
+        self._action_taken += 1
+        self._rewards.append(reward)
+        self._on_experiment_updated(no_op_action, reward, done)
+
+        # report scores
         self._scores.append(sum(self._rewards))
         self.visualize(self._episode, 'Reward', sum(self._rewards))
+
+        # set flags to start a new episode
+        self._episode_has_started = False
+        self._episode_has_ended = True
 
     def _on_experiment_updated(self, action, reward, is_done):
         self._current_episode_lbl.config(text='Episode: %d' % self._episode)

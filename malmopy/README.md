@@ -60,7 +60,7 @@ agent = DQNAgent("DQN Agent", env.available_actions, model, memory)
 
 We can now run the experiment inside a loop:
 ```python
-# Remplace range by xrange if running Python 2
+# Replace range by xrange if running Python 2
 for it in range(20000000):
     
     # Assume that an epoch is 250.000 actions done by the agent 
