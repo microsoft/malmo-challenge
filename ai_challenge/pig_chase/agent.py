@@ -72,11 +72,12 @@ class TabularQLearnerAgent(BaseAgent):
             else:
                 old_qvalues[self._last_action_index] = reward
             self._QTable[self._last_hash] = old_qvalues
+            if new_hash == self._last_hash:
+                new_max_q = max(new_qvalues)    # refresh our max qvalue
 
         # Choose best action for this step:
         top_q_indices = [i for i, val in enumerate(new_qvalues) if val == new_max_q]
         self._last_action_index = np.random.choice(top_q_indices)
-        #action = ENV_ACTIONS[self._last_action_index]
         self._last_hash = new_hash
         return self._last_action_index
 
