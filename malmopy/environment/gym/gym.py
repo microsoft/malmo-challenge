@@ -27,7 +27,7 @@ from ..environment import VideoCapableEnvironment, StateBuilder, ALEStateBuilder
 
 
 def need_record(episode_id):
-    if episode_id % 10000 == 0:
+    if episode_id % 1000 == 0:
         # It's sometime needed to clean up before Popen
         return True
     else:
@@ -39,7 +39,9 @@ class GymEnvironment(VideoCapableEnvironment):
     Wraps an Open AI Gym environment
     """
 
-    def __init__(self, env_name, state_builder=ALEStateBuilder(), repeat_action=4, no_op=30, monitoring_path=None):
+    def __init__(self, env_name, state_builder=ALEStateBuilder(),
+                 repeat_action=4, no_op=30, monitoring_path=None):
+
         assert isinstance(state_builder, StateBuilder), 'state_builder should inherit from StateBuilder'
         assert isinstance(repeat_action, (int, tuple)), 'repeat_action should be int or tuple'
         if isinstance(repeat_action, int):
@@ -59,8 +61,6 @@ class GymEnvironment(VideoCapableEnvironment):
         if monitoring_path is not None:
             self._env = Monitor(self._env, monitoring_path, video_callable=need_record)
 
-        self.reset()
-
     @property
     def available_actions(self):
         return self._env.action_space.n
@@ -75,7 +75,7 @@ class GymEnvironment(VideoCapableEnvironment):
 
     @property
     def frame(self):
-        return GymEnvironment.process_state(self.state)
+        return Image.fromarray(self._state)
 
     def do(self, action):
         self._state, self._reward, self._done, _ = self._env.step(action)
@@ -83,16 +83,13 @@ class GymEnvironment(VideoCapableEnvironment):
         return self.state, self._reward, self._done
 
     def reset(self):
-        if self._done is None or self._done:
-            super(GymEnvironment, self).reset()
+        super(GymEnvironment, self).reset()
 
-            self._state = self._env.reset()
+        self._state = self._env.reset()
 
-            # Random number of initial no-op to introduce stochasticity
-            if self._no_op > 0:
-                for _ in six.moves.range(np.random.randint(1, self._no_op)):
-                    self._env.step(0)
+        # Random number of initial no-op to introduce stochasticity
+        if self._no_op > 0:
+            for _ in six.moves.range(np.random.randint(1, self._no_op)):
+                self._state, _, _, _ = self._env.step(0)
 
-    @staticmethod
-    def process_state(state):
-        return Image.fromarray(state)
+        return self.state
