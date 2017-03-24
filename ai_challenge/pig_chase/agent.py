@@ -48,8 +48,6 @@ class TabularQLearnerAgent(BaseAgent):
 
     def _get_state_hash(self, state):
         entities = state[1]
-        if not entities:
-            return None
         hash = ""
         for ent in sorted(entities, key=lambda x: x['name']):
             x = str(int(ent['x']))
@@ -60,8 +58,6 @@ class TabularQLearnerAgent(BaseAgent):
 
     def act(self, new_state, reward, done, is_training=False):
         new_hash = self._get_state_hash(new_state)
-        if new_hash == None:
-            return None
         if not new_hash in self._QTable:
             self._QTable[new_hash] = [0.0 for act in ENV_ACTIONS]
         new_qvalues = self._QTable[new_hash]
