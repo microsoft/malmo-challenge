@@ -68,6 +68,11 @@ def agent_factory(name, role, baseline_agent, clients, max_epochs,
         agent_done = False
 
         while True:
+            if env.done:
+                while True:
+                    obs = env.reset()
+                    if obs:
+                        break
 
             # select an action
             action = agent.act(obs, reward, agent_done, is_training=True)
@@ -99,14 +104,16 @@ def agent_factory(name, role, baseline_agent, clients, max_epochs,
         viz_rewards = []
 
         max_training_steps = EPOCH_SIZE * max_epochs
-        for step in range(1, max_training_steps+1):
+        for step in xrange(1, max_training_steps+1):
 
             # check if env needs reset
             if env.done:
-
-                visualize_training(visualizer, step, viz_rewards)
-                viz_rewards = []
-                obs = env.reset()
+                while True:
+                    visualize_training(visualizer, step, viz_rewards)
+                    viz_rewards = []
+                    obs = env.reset()
+                    if obs:
+                        break
 
             # select an action
             action = agent.act(obs, reward, agent_done, is_training=True)
@@ -146,7 +153,7 @@ if __name__ == '__main__':
     arg_parser.add_argument('-t', '--type', type=str, default='tabq',
                             choices=['tabq', 'astar', 'random'],
                             help='The type of baseline to run.')
-    arg_parser.add_argument('-e', '--epochs', type=int, default=5,
+    arg_parser.add_argument('-e', '--epochs', type=int, default=5000000,
                             help='Number of epochs to run.')
     arg_parser.add_argument('clients', nargs='*',
                             default=['127.0.0.1:10000', '127.0.0.1:10001'],
