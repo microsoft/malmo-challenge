@@ -235,7 +235,7 @@ class QLearnerAgent(BaseAgent):
 
         min_val, max_val = self._reward_clipping
         reward = max(min_val, min(max_val, reward))
-        self._memory.append(new_state, int(action), reward, is_terminal)
+        self._memory.append(old_state, int(action), reward, is_terminal)
 
     def learn(self):
         if (self._actions_taken % self._train_frequency) == 0:
