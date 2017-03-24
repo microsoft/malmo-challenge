@@ -67,7 +67,7 @@ def run_experiment(environment, backend, device_id, max_epoch, record, logdir,
                           0.99, 32, train_after=50000, reward_clipping=(-1, 1),
                           visualizer=visualizer)
 
-    env.reset()
+    state = env.reset()
     reward = 0
     agent_done = False
     viz_rewards = []
@@ -80,19 +80,18 @@ def run_experiment(environment, backend, device_id, max_epoch, record, logdir,
             visualize_training(visualizer, step, viz_rewards)
             agent.inject_summaries(step)
             viz_rewards = []
-            env.reset()
+            state = env.reset()
 
         # select an action
-        action = agent.act(env.state, reward, agent_done, is_training=True)
+        action = agent.act(state, reward, agent_done, is_training=True)
 
         # take a step
-        _, reward, agent_done = env.do(action)
+        state, reward, agent_done = env.do(action)
         viz_rewards.append(reward)
 
         if (step % EPOCH_SIZE) == 0:
-            if 'model' in locals():
-                model.save('%s-%s-dqn_%d.model' %
-                           (backend, environment, step / EPOCH_SIZE))
+            model.save('%s-%s-dqn_%d.model' %
+                       (backend, environment, step / EPOCH_SIZE))
 
 
 if __name__ == '__main__':
