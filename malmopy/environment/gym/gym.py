@@ -27,11 +27,7 @@ from ..environment import VideoCapableEnvironment, StateBuilder, ALEStateBuilder
 
 
 def need_record(episode_id):
-    if episode_id % 1000 == 0:
-        # It's sometime needed to clean up before Popen
-        return True
-    else:
-        return False
+    return episode_id % 1000 == 0
 
 
 class GymEnvironment(VideoCapableEnvironment):
@@ -39,9 +35,7 @@ class GymEnvironment(VideoCapableEnvironment):
     Wraps an Open AI Gym environment
     """
 
-    def __init__(self, env_name, state_builder=ALEStateBuilder(),
-                 repeat_action=4, no_op=30, monitoring_path=None):
-
+    def __init__(self, env_name, state_builder=ALEStateBuilder(), repeat_action=4, no_op=30, monitoring_path=None):
         assert isinstance(state_builder, StateBuilder), 'state_builder should inherit from StateBuilder'
         assert isinstance(repeat_action, (int, tuple)), 'repeat_action should be int or tuple'
         if isinstance(repeat_action, int):

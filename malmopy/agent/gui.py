@@ -16,11 +16,8 @@
 # ===================================================================================================================
 
 from __future__ import absolute_import
-import sys
-if sys.version_info.major == 2:
-    from Tkinter import Tk
-else:
-    from tkinter import Tk
+
+from tkinter import Tk
 
 from . import BaseAgent
 from ..environment import VideoCapableEnvironment

@@ -22,8 +22,8 @@ import chainer.functions as F
 import chainer.links as L
 import numpy as np
 from chainer import ChainList
-from chainer.optimizers import Adam
 from chainer.initializers import HeUniform
+from chainer.optimizers import Adam
 from chainer.serializers import save_npz, load_npz
 
 from ..model import QModel
@@ -80,7 +80,8 @@ class MLPChain(ChainerModel):
         return self[-1](x)
 
     def _build_model(self):
-        hidden_layers = [L.Linear(None, units) for units in self._hidden_layer_sizes]
+        hidden_layers = [L.Linear(None, units) for units in
+                         self._hidden_layer_sizes]
         hidden_layers += [L.Linear(None, self.output_shape)]
 
         return hidden_layers
@@ -107,8 +108,10 @@ class ReducedDQNChain(ChainerModel):
         initializer = HeUniform()
         in_shape = self.input_shape[0]
 
-        return [L.Convolution2D(in_shape, 64, ksize=4, stride=2, initialW=initializer),
-                L.Convolution2D(64, 64, ksize=3, stride=1, initialW=initializer),
+        return [L.Convolution2D(in_shape, 64, ksize=4, stride=2,
+                                initialW=initializer),
+                L.Convolution2D(64, 64, ksize=3, stride=1,
+                                initialW=initializer),
                 L.Linear(None, 512, initialW=HeUniform(0.1)),
                 L.Linear(512, self.output_shape, initialW=HeUniform(0.1))]
 
@@ -116,8 +119,8 @@ class ReducedDQNChain(ChainerModel):
 class DQNChain(ChainerModel):
     """
     DQN topology as in 
-    "Nature 518: Human-level control through deep reinforcement learning" 
-    (Mnih & al. 2015)
+    (Mnih & al. 2015): Human-level control through deep reinforcement learning"
+    Nature 518.7540 (2015): 529-533.
     
     Convolution(32, kernel=(8, 8), strides=(4, 4)
     Convolution(64, kernel=(4, 4), strides=(2, 2)
@@ -138,9 +141,12 @@ class DQNChain(ChainerModel):
         initializer = HeUniform()
         in_shape = self.input_shape[0]
 
-        return [L.Convolution2D(in_shape, 32, ksize=8, stride=4, initialW=initializer),
-                L.Convolution2D(32, 64, ksize=4, stride=2, initialW=initializer),
-                L.Convolution2D(64, 64, ksize=3, stride=1, initialW=initializer),
+        return [L.Convolution2D(in_shape, 32, ksize=8, stride=4,
+                                initialW=initializer),
+                L.Convolution2D(32, 64, ksize=4, stride=2,
+                                initialW=initializer),
+                L.Convolution2D(64, 64, ksize=3, stride=1,
+                                initialW=initializer),
                 L.Linear(7 * 7 * 64, 512, initialW=HeUniform(0.01)),
                 L.Linear(512, self.output_shape, initialW=HeUniform(0.01))]
 
@@ -208,7 +214,7 @@ class QNeuralNetwork(QModel):
         q_subset = F.reshape(F.select_item(q, actions), (batch_size, 1))
         y = y.reshape(batch_size, 1)
 
-        loss = F.sum(F.huber_loss(q_subset, y, 1.0))
+        loss = F.huber_loss(q_subset, y, 1.0)
 
         self._model.cleargrads()
         loss.backward()
@@ -224,7 +230,7 @@ class QNeuralNetwork(QModel):
 
     @property
     def loss_val(self):
-        return self._loss_val / self._minibatch_size
+        return self._loss_val  # / self._minibatch_size
 
     def save(self, output_file):
         save_npz(output_file, self._model)
