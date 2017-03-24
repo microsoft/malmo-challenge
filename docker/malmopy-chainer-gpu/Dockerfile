@@ -62,6 +62,5 @@ WORKDIR /root
 RUN git clone https://github.com/Microsoft/malmo-challenge.git && \
     cd malmo-challenge && \
     git checkout tags/$MALMOPY_VERSION -b latest
-
 WORKDIR /root/malmo-challenge
 RUN pip install -e '.[all]'

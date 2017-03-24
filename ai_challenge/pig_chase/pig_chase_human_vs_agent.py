@@ -51,26 +51,35 @@ def agent_factory(name, role, kind, clients, max_episodes, max_actions, logdir, 
                                   human_speed=True, randomize_positions=True)
         agent = PigChaseChallengeAgent(name)
 
-        for episode in range(max_episodes):
-            rewards = []
-            if type(agent.current_agent) == RandomAgent:
-                agent_type = PigChaseEnvironment.AGENT_TYPE_1
-            else:
-                agent_type = PigChaseEnvironment.AGENT_TYPE_2
-            obs = env.reset(agent_type)
-            reward = 0
-            done = False
+        if type(agent.current_agent) == RandomAgent:
+            agent_type = PigChaseEnvironment.AGENT_TYPE_1
+        else:
+            agent_type = PigChaseEnvironment.AGENT_TYPE_2
+        obs = env.reset(agent_type)
+        reward = 0
+        rewards = []
+        done = False
+        episode = 0
 
-            while not done:
-                # select an action
-                action = agent.act(obs, reward, done, True)
-                # take a step
-                obs, reward, done = env.do(action)
-                rewards.append(reward)
+        while True:
 
-            if obs is not None:
-                agent.act(obs, reward, done, True)  # Give agent a chance to respond to done condition
-            visualizer << (episode + 1, 'Reward', sum(rewards))
+            # select an action
+            action = agent.act(obs, reward, done, True)
+
+            if done:
+                visualizer << (episode + 1, 'Reward', sum(rewards))
+                rewards = []
+                episode += 1
+
+                if type(agent.current_agent) == RandomAgent:
+                    agent_type = PigChaseEnvironment.AGENT_TYPE_1
+                else:
+                    agent_type = PigChaseEnvironment.AGENT_TYPE_2
+                obs = env.reset(agent_type)
+
+            # take a step
+            obs, reward, done = env.do(action)
+            rewards.append(reward)
 
     else:
         env = PigChaseEnvironment(clients, PigChaseSymbolicStateBuilder(),

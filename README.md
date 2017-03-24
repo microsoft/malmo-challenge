@@ -1,6 +1,6 @@
 # The Malmo Collaborative AI Challenge
 
-This repository contains the task definition and example for the [Malmo Collaborative AI Challenge](https://www.microsoft.com/en-us/research/academic-program/collaborative-ai-challenge/). 
+This repository contains the task definition and example code for the [Malmo Collaborative AI Challenge](https://www.microsoft.com/en-us/research/academic-program/collaborative-ai-challenge/). 
 <!-- ## Purpose -->
 This challenge is organized to encourage research in collaborative AI - to work towards AI agents 
 that learn to collaborate to solve problems and achieve goals. 
@@ -83,13 +83,13 @@ The challenge task takes the form of a mini game, called Pig Chase. Learn about 
 
 See how to [run your first baseline experiment](ai_challenge/pig_chase/README.md#run-your-first-experiment) on the [Pig Chase Challenge page](ai_challenge/pig_chase/README.md).
 
-
 # Next steps
 
 ## Run an experiment in Docker on Azure
 
 Docker is a virtualization platform that makes it easy to deploy software with all its dependencies. 
 We use docker to run experiments locally or in the cloud. Details on how to run an example experiment using docker are in the [docker README](docker/README.md).
+
 
 ## Resources
 
