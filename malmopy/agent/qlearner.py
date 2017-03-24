@@ -153,7 +153,7 @@ Tracker = namedtuple('Tracker', ['state', 'action'])
 
 class QLearnerAgent(BaseAgent):
     def __init__(self, name, nb_actions, model, memory, gamma=.99,
-                 minibatch_size=32, train_after=10000, train_frequency=4,
+                 minibatch_size=32, train_after=50000, train_frequency=4,
                  explorer=None, reward_clipping=None, visualizer=None):
 
         assert isinstance(model, QModel), 'model should inherit from QModel'
@@ -175,7 +175,6 @@ class QLearnerAgent(BaseAgent):
         self._train_frequency = train_frequency
         self._history = History(model.input_shape)
         self._actions_taken = 0
-        self._train_counter = 0
         self._tracker = None
 
         # Rewards clipping related
@@ -203,19 +202,16 @@ class QLearnerAgent(BaseAgent):
         self._stats_loss = []
 
     def act(self, new_state, reward, done, is_training=False):
-        # associate the previous s,a with reward, done
-        # Check if previous trackers are non None
+
         if self._tracker is not None:
             self.observe(self._tracker.state, self._tracker.action,
                          reward, new_state, done)
 
-        # update the model if needed
-        if is_training and (self._actions_taken >= self._train_after):
-            self.learn()
+        if is_training:
+            if self._actions_taken > self._train_after:
+                self.learn()
 
         # Append the new state to the history
-        if done:
-            self._history.reset()
         self._history.append(new_state)
 
         # select the next action
@@ -228,18 +224,17 @@ class QLearnerAgent(BaseAgent):
             self._stats_mean_qvalues.append(q_values.max())
             self._stats_stddev_qvalues.append(np.std(q_values))
 
-        # record for use in the next step
-        self._tracker = Tracker(new_state, new_action)
         self._actions_taken += 1
-
-        self._stats_rewards.append(reward)
 
         return new_action
 
     def observe(self, old_state, action, reward, new_state, is_terminal):
+        if is_terminal:
+            self._history.reset()
+
         min_val, max_val = self._reward_clipping
-        reward = min(max_val, max(reward, min_val))
-        self._memory.append(old_state, int(action), reward, is_terminal)
+        reward = max(min_val, min(max_val, reward))
+        self._memory.append(new_state, int(action), reward, is_terminal)
 
     def learn(self):
         if (self._actions_taken % self._train_frequency) == 0:
@@ -274,7 +269,7 @@ class QLearnerAgent(BaseAgent):
         """ Compute the Q Values from input states """
 
         q_hat = self._model.evaluate(posts, model=QModel.TARGET_NETWORK)
-        q_hat_eval = q_hat[range(len(q_hat)), q_hat.argmax(axis=1)]
+        q_hat_eval = q_hat[np.arange(len(actions)), q_hat.argmax(axis=1)]
 
         q_targets = (1 - terminals) * (self._gamma * q_hat_eval) + rewards
         return np.array(q_targets, dtype=np.float32)

@@ -64,7 +64,7 @@ def run_experiment(environment, backend, device_id, max_epoch, record, logdir,
 
     memory = TemporalMemory(1000000, model.input_shape[1:])
     agent = QLearnerAgent("DQN Agent", env.available_actions, model, memory,
-                          0.99, 32, train_after=50000, reward_clipping=(-1, 1),
+                          0.99, 32, train_after=10000, reward_clipping=(-1, 1),
                           visualizer=visualizer)
 
     state = env.reset()

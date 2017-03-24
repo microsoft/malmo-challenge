@@ -206,7 +206,7 @@ class ReplayMemory(object):
         :param replace: True if sampling with replacement
         :return: Integer[size] representing the sampled indices
         """
-        return np.random.choice(self._count - 1, size, replace=replace)
+        return np.random.choice(self._count, size, replace=replace)
 
     def get_state(self, index):
         """

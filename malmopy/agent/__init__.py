@@ -22,4 +22,4 @@ from .astar import AStarAgent
 from .explorer import BaseExplorer, LinearEpsilonGreedyExplorer
 from .qlearner import QLearnerAgent, History, ReplayMemory, TemporalMemory
 
-__all__ = ['agent', 'astar', 'explorer']
+__all__ = ['agent', 'astar', 'qlearner', 'explorer']
