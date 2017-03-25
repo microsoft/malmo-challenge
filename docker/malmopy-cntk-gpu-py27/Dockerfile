@@ -15,7 +15,7 @@
 # SOFTWARE.
 # ===================================================================================================================
 
-FROM microsoft/cntk:2.0.beta12.0-gpu-python2.7-cuda8.0-cudnn5.1
+FROM microsoft/cntk:2.0.beta15.0-gpu-python2.7-cuda8.0-cudnn5.1
 
 # Version variables
 ENV MALMO_VERSION 0.21.0
