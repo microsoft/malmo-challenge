@@ -15,7 +15,7 @@
 # SOFTWARE.
 # ===================================================================================================================
 
-FROM microsoft/cntk:2.0.beta12.0-cpu-python2.7
+FROM microsoft/cntk:2.0.beta15.0-cpu-python2.7
 
 # Version variables
 ENV MALMO_VERSION 0.21.0
