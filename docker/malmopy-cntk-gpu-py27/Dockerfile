@@ -15,16 +15,18 @@
 # SOFTWARE.
 # ===================================================================================================================
 
-FROM microsoft/cntk:2.0.beta12.0-gpu-python2.7-cuda8.0-cudnn5.1
+FROM microsoft/cntk:2.0.beta15.0-gpu-python2.7-cuda8.0-cudnn5.1
 
 # Version variables
-ENV MALMO_VERSION = 0.21.0
-ENV MALMOPY_VERSION=1.0.0RC1
+ENV MALMO_VERSION 0.21.0
+ENV MALMOPY_VERSION 0.1.0
 
 RUN apt-get update -y && \
     apt-get install -y --no-install-recommends \
     build-essential \
     cmake \
+    ssh \
+    git-all \
     zlib1g-dev \
     python-dev \
     python-pip \
@@ -49,18 +51,19 @@ ENV PATH=/root/anaconda3/envs/cntk-py27/bin:$PATH
 RUN /root/anaconda3/envs/cntk-py27/bin/pip install --upgrade pip
 
 # download and unpack Malmo
-
 WORKDIR /root
-RUN wget https://github.com/Microsoft/malmo/releases/download/$(MALMO_VERSION)/Malmo-$(MALMO_VERSION)-Linux-Ubuntu-16.04-64bit_withBoost.zip
-RUN unzip Malmo-$(MALMO_VERSION)-Linux-Ubuntu-16.04-64bit.zip
-RUN mv Malmo-$(MALMO_VERSION)-Linux-Ubuntu-16.04-64bit Malmo
-RUN rm Malmo-$(MALMO_VERSION)-Linux-Ubuntu-16.04-64bit.zip
+RUN wget https://github.com/Microsoft/malmo/releases/download/$MALMO_VERSION/Malmo-$MALMO_VERSION-Linux-Ubuntu-16.04-64bit_withBoost.zip && \
+    unzip Malmo-$MALMO_VERSION-Linux-Ubuntu-16.04-64bit_withBoost.zip && \
+    rm Malmo-$MALMO_VERSION-Linux-Ubuntu-16.04-64bit_withBoost.zip && \
+    mv Malmo-$MALMO_VERSION-Linux-Ubuntu-16.04-64bit_withBoost Malmo
+
 ENV MALMO_XSD_PATH /root/Malmo/Schemas
 ENV PYTHONPATH /root/Malmo/Python_Examples
 
+# add and install malmopy, malmo challenge task and samples
 WORKDIR /root
-RUN wget https://malmoexperimentsgrp975.blob.core.windows.net/malmo-drop/malmopy-$MALMOPY_VERSION.zip -P malmopy && \
-    cd malmopy && \
-    unzip malmopy-$MALMOPY_VERSION.zip && \
-    rm malmopy-$MALMOPY_VERSION.zip && \
-    /root/anaconda3/envs/cntk-py27/bin/pip install -e '.[all]'
+RUN git clone https://github.com/Microsoft/malmo-challenge.git && \
+    cd malmo-challenge && \
+    git checkout tags/$MALMOPY_VERSION -b latest
+WORKDIR /root/malmo-challenge
+RUN pip install -e '.[all]'

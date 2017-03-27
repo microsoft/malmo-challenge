@@ -28,7 +28,7 @@ services:
   agents:
       image: malmopy-cntk-cpu-py27:latest
       working_dir: /root/malmopy/ai_challenge/pig_chase
-      command: python pig_chase_baseline.py malmo1:10000 malmo2:10000
+      command: bash -c "python pig_chase_baseline.py malmo1:10000 malmo2:10000 & tensorboard --logdir 'results' --port 6006"
       ports:
         - "6006:6006"
       links:
