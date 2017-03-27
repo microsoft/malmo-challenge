@@ -99,7 +99,13 @@ def agent_factory(name, role, clients, device, max_epochs, logdir, visualizer):
                 visualize_training(visualizer, step, viz_rewards)
                 agent.inject_summaries(step)
                 viz_rewards = []
+
                 obs = env.reset()
+                while obs is None:
+                    # this can happen if the episode ended with the first
+                    # action of the other agent
+                    print('Warning: received obs == None.')
+                    obs = env.reset()
 
             # select an action
             action = agent.act(obs, reward, agent_done, is_training=True)
