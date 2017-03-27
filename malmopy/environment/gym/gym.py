@@ -27,11 +27,7 @@ from ..environment import VideoCapableEnvironment, StateBuilder, ALEStateBuilder
 
 
 def need_record(episode_id):
-    if episode_id % 10000 == 0:
-        # It's sometime needed to clean up before Popen
-        return True
-    else:
-        return False
+    return episode_id % 1000 == 0
 
 
 class GymEnvironment(VideoCapableEnvironment):
@@ -59,8 +55,6 @@ class GymEnvironment(VideoCapableEnvironment):
         if monitoring_path is not None:
             self._env = Monitor(self._env, monitoring_path, video_callable=need_record)
 
-        self.reset()
-
     @property
     def available_actions(self):
         return self._env.action_space.n
@@ -71,11 +65,11 @@ class GymEnvironment(VideoCapableEnvironment):
 
     @property
     def lives(self):
-        return self._env.ale.lives()
+        return self._env.env.ale.lives()
 
     @property
     def frame(self):
-        return GymEnvironment.process_state(self.state)
+        return Image.fromarray(self._state)
 
     def do(self, action):
         self._state, self._reward, self._done, _ = self._env.step(action)
@@ -83,16 +77,13 @@ class GymEnvironment(VideoCapableEnvironment):
         return self.state, self._reward, self._done
 
     def reset(self):
-        if self._done is None or self._done:
-            super(GymEnvironment, self).reset()
+        super(GymEnvironment, self).reset()
 
-            self._state = self._env.reset()
+        self._state = self._env.reset()
 
-            # Random number of initial no-op to introduce stochasticity
-            if self._no_op > 0:
-                for _ in six.moves.range(np.random.randint(1, self._no_op)):
-                    self._env.step(0)
+        # Random number of initial no-op to introduce stochasticity
+        if self._no_op > 0:
+            for _ in six.moves.range(np.random.randint(1, self._no_op)):
+                self._state, _, _, _ = self._env.step(0)
 
-    @staticmethod
-    def process_state(state):
-        return Image.fromarray(state)
+        return self.state

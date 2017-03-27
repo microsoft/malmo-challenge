@@ -17,9 +17,47 @@
 
 from __future__ import absolute_import
 
-from .agent import BaseAgent, RandomAgent, ConsoleAgent, ReplayMemory
-from .astar import AStarAgent
-from .explorer import BaseExplorer, LinearEpsilonGreedyExplorer
-from .qlearner import QLearnerAgent, History, ReplayMemory, TemporalMemory
 
-__all__ = ['agent', 'astar', 'qlearner', 'explorer']
+class BaseModel(object):
+    """Represents a learning capable entity"""
+
+    def __init__(self, in_shape, output_shape):
+        self._input_shape = in_shape
+        self._output_shape = output_shape
+
+    @property
+    def input_shape(self):
+        return self._input_shape
+
+    @property
+    def output_shape(self):
+        return self._output_shape
+
+    @property
+    def loss_val(self):
+        raise NotImplementedError()
+
+    def evaluate(self, environment):
+        raise NotImplementedError()
+
+    def train(self, x, y):
+        raise NotImplementedError()
+
+    def load(self, input_file):
+        raise NotImplementedError()
+
+    def save(self, output_file):
+        raise NotImplementedError()
+
+
+class QModel(BaseModel):
+    ACTION_VALUE_NETWORK = 1 << 0
+    TARGET_NETWORK = 1 << 1
+
+    def evaluate(self, environment, model=ACTION_VALUE_NETWORK):
+        raise NotImplementedError()
+
+    def train(self, x, y, actions=None):
+        raise NotImplementedError()
+
+

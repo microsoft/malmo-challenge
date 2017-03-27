@@ -16,8 +16,9 @@
 # ===================================================================================================================
 
 from __future__ import absolute_import
-import sys
-if sys.version_info.major == 2:
+
+import six
+if six.PY2:
     from Tkinter import Tk
 else:
     from tkinter import Tk

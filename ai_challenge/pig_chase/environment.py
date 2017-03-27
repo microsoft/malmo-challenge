@@ -22,7 +22,8 @@ import re
 
 import numpy as np
 
-from common import Entity, ENV_ACTIONS, ENV_BOARD, ENV_ENTITIES, ENV_BOARD_SHAPE, ENV_AGENT_NAMES
+from common import Entity, ENV_ACTIONS, ENV_BOARD, ENV_ENTITIES, \
+    ENV_BOARD_SHAPE, ENV_AGENT_NAMES
 
 from MalmoPython import MissionSpec
 from malmopy.environment.malmo import MalmoEnvironment, MalmoStateBuilder
@@ -44,21 +45,111 @@ class PigChaseSymbolicStateBuilder(MalmoStateBuilder):
         :param environment Reference to the pig chase environment
         :return (board, entities) where board is an array of shape (9, 9) with the block type / entities name for each coordinate, and entities is a list of current entities
         """
-        assert isinstance(environment, PigChaseEnvironment), 'environment is not a Pig Chase Environment instance'
+        assert isinstance(environment,
+                          PigChaseEnvironment), 'environment is not a Pig Chase Environment instance'
 
         world_obs = environment.world_observations
         if world_obs is None or ENV_BOARD not in world_obs:
             return None
 
         # Generate symbolic view
-        board = np.array(world_obs[ENV_BOARD], dtype=object).reshape(ENV_BOARD_SHAPE)
+        board = np.array(world_obs[ENV_BOARD], dtype=object).reshape(
+            ENV_BOARD_SHAPE)
         entities = world_obs[ENV_ENTITIES]
 
         if self._entities_override:
             for entity in entities:
-                board[int(entity['z'] + 1), int(entity['x'])] += '/' + entity['name']
+                board[int(entity['z'] + 1), int(entity['x'])] += '/' + entity[
+                    'name']
 
         return (board, entities)
+
+
+class PigChaseTopDownStateBuilder(MalmoStateBuilder):
+    """
+    Generate low-res RGB top-down view (equivalent to the symbolic view)
+    """
+
+    RGB_PALETTE = {
+        'sand': [255, 225, 150],
+        'grass': [44, 176, 55],
+        'lapis_block': [190, 190, 255],
+        'Agent_1': [255, 0, 0],
+        'Agent_2': [0, 0, 255],
+        'Pig': [185, 126, 131]
+    }
+
+    GRAY_PALETTE = {
+        'sand': 255,
+        'grass': 200,
+        'lapis_block': 150,
+        'Agent_1': 100,
+        'Agent_2': 50,
+        'Pig': 0
+    }
+
+    def __init__(self, gray=True):
+        self._gray = bool(gray)
+
+    def build(self, environment):
+        world_obs = environment.world_observations
+        if world_obs is None or ENV_BOARD not in world_obs:
+            return None
+        # Generate symbolic view
+        board, entities = environment._internal_symbolic_builder.build(
+            environment)
+
+        palette = self.GRAY_PALETTE if self._gray else self.RGB_PALETTE
+        buffer_shape = (board.shape[0] * 2, board.shape[1] * 2)
+        if not self._gray:
+            buffer_shape = buffer_shape + (3,)
+        buffer = np.zeros(buffer_shape, dtype=np.float32)
+
+        it = np.nditer(board, flags=['multi_index', 'refs_ok'])
+
+        while not it.finished:
+            entities_on_cell = str.split(str(board[it.multi_index]), '/')
+            mapped_value = palette[entities_on_cell[0]]
+            # draw 4 pixels per block
+            buffer[it.multi_index[0] * 2:it.multi_index[0] * 2 + 2,
+                   it.multi_index[1] * 2:it.multi_index[1] * 2 + 2] = mapped_value
+            it.iternext()
+
+        for agent in entities:
+            agent_x = int(agent['x'])
+            agent_z = int(agent['z']) + 1
+            agent_pattern = buffer[agent_z * 2:agent_z * 2 + 2,
+                                   agent_x * 2:agent_x * 2 + 2]
+
+            # convert Minecraft yaw to 0=north, 1=west etc.
+            agent_direction = ((((int(agent['yaw']) - 45) % 360) // 90) - 1) % 4
+
+            if agent_direction == 0:
+                # facing north
+                agent_pattern[1, 0:2] = palette[agent['name']]
+                agent_pattern[0, 0:2] += palette[agent['name']]
+                agent_pattern[0, 0:2] /= 2.
+            elif agent_direction == 1:
+                # west
+                agent_pattern[0:2, 1] = palette[agent['name']]
+                agent_pattern[0:2, 0] += palette[agent['name']]
+                agent_pattern[0:2, 0] /= 2.
+            elif agent_direction == 2:
+                # south
+                agent_pattern[0, 0:2] = palette[agent['name']]
+                agent_pattern[1, 0:2] += palette[agent['name']]
+                agent_pattern[1, 0:2] /= 2.
+            else:
+                # east
+                agent_pattern[0:2, 0] = palette[agent['name']]
+                agent_pattern[0:2, 1] += palette[agent['name']]
+                agent_pattern[0:2, 1] /= 2.
+
+            buffer[agent_z * 2:agent_z * 2 + 2,
+                   agent_x * 2:agent_x * 2 + 2] = agent_pattern
+
+        return buffer / 255.
+
 
 class PigChaseEnvironment(MalmoEnvironment):
     """
@@ -72,12 +163,12 @@ class PigChaseEnvironment(MalmoEnvironment):
     AGENT_TYPE_3 = 3
 
     VALID_START_POSITIONS = [
-        (2.5,1.5), (3.5,1.5), (4.5,1.5), (5.5,1.5), (6.5,1.5),
-        (2.5,2.5),            (4.5,2.5),            (6.5,2.5),
-        (2.5,3.5), (3.5,3.5), (4.5,3.5), (5.5,3.5), (6.5,3.5),
-        (2.5,4.5),            (4.5,4.5),            (6.5,4.5),
-        (2.5,5.5), (3.5,5.5), (4.5,5.5), (5.5,5.5), (6.5,5.5)
-        ]
+        (2.5, 1.5), (3.5, 1.5), (4.5, 1.5), (5.5, 1.5), (6.5, 1.5),
+        (2.5, 2.5), (4.5, 2.5), (6.5, 2.5),
+        (2.5, 3.5), (3.5, 3.5), (4.5, 3.5), (5.5, 3.5), (6.5, 3.5),
+        (2.5, 4.5), (4.5, 4.5), (6.5, 4.5),
+        (2.5, 5.5), (3.5, 5.5), (4.5, 5.5), (5.5, 5.5), (6.5, 5.5)
+    ]
     VALID_YAW = [0, 90, 180, 270]
 
     def __init__(self, remotes,
@@ -93,7 +184,8 @@ class PigChaseEnvironment(MalmoEnvironment):
         if human_speed:
             print('Setting mission to run at human speed')
             self._mission_xml = re.sub('<MsPerTick>\d+</MsPerTick>',
-                                       '<MsPerTick>50</MsPerTick>', self._mission_xml)
+                                       '<MsPerTick>50</MsPerTick>',
+                                       self._mission_xml)
         super(PigChaseEnvironment, self).__init__(self._mission_xml, actions,
                                                   remotes, role, exp_name, True)
 
@@ -133,32 +225,39 @@ class PigChaseEnvironment(MalmoEnvironment):
         # set agent starting pos
         if self._randomize_positions and self._role == 0:
             pos = [PigChaseEnvironment.VALID_START_POSITIONS[i]
-                    for i in np.random.choice(
-                        range(len(PigChaseEnvironment.VALID_START_POSITIONS)),
-                                   3, replace=False)]
+                   for i in np.random.choice(
+                    range(len(PigChaseEnvironment.VALID_START_POSITIONS)),
+                    3, replace=False)]
             while not (self._get_pos_dist(pos[0], pos[1]) > 1.1 and
-                       self._get_pos_dist(pos[1], pos[2]) > 1.1 and
-                       self._get_pos_dist(pos[0], pos[2]) > 1.1):
+                               self._get_pos_dist(pos[1], pos[2]) > 1.1 and
+                               self._get_pos_dist(pos[0], pos[2]) > 1.1):
                 pos = [PigChaseEnvironment.VALID_START_POSITIONS[i]
-                        for i in np.random.choice(
-                            range(len(PigChaseEnvironment.VALID_START_POSITIONS)),
-                                       3, replace=False)]
+                       for i in np.random.choice(
+                        range(len(PigChaseEnvironment.VALID_START_POSITIONS)),
+                        3, replace=False)]
 
             xml = re.sub(r'<DrawEntity[^>]+>',
-                         r'<DrawEntity x="%g" y="4" z="%g" type="Pig"/>' % pos[0], xml)
-            xml = re.sub(r'(<Name>%s</Name>\s*<AgentStart>\s*)<Placement[^>]+>' % ENV_AGENT_NAMES[0],
-                         r'\1<Placement x="%g" y="4" z="%g" pitch="30" yaw="%g"/>' %
-                         (pos[1][0], pos[1][1], np.random.choice(PigChaseEnvironment.VALID_YAW)), xml)
-            xml = re.sub(r'(<Name>%s</Name>\s*<AgentStart>\s*)<Placement[^>]+>' % ENV_AGENT_NAMES[1],
-                         r'\1<Placement x="%g" y="4" z="%g" pitch="30" yaw="%g"/>' %
-                         (pos[2][0], pos[2][1], np.random.choice(PigChaseEnvironment.VALID_YAW)), xml)
+                         r'<DrawEntity x="%g" y="4" z="%g" type="Pig"/>' % pos[
+                             0], xml)
+            xml = re.sub(
+                r'(<Name>%s</Name>\s*<AgentStart>\s*)<Placement[^>]+>' %
+                ENV_AGENT_NAMES[0],
+                r'\1<Placement x="%g" y="4" z="%g" pitch="30" yaw="%g"/>' %
+                (pos[1][0], pos[1][1],
+                 np.random.choice(PigChaseEnvironment.VALID_YAW)), xml)
+            xml = re.sub(
+                r'(<Name>%s</Name>\s*<AgentStart>\s*)<Placement[^>]+>' %
+                ENV_AGENT_NAMES[1],
+                r'\1<Placement x="%g" y="4" z="%g" pitch="30" yaw="%g"/>' %
+                (pos[2][0], pos[2][1],
+                 np.random.choice(PigChaseEnvironment.VALID_YAW)), xml)
 
         return MissionSpec(xml, True)
 
     def _get_pos_dist(self, pos1, pos2):
-        return np.sqrt((pos1[0] - pos2[0])**2 + (pos1[1] - pos2[1])**2)
+        return np.sqrt((pos1[0] - pos2[0]) ** 2 + (pos1[1] - pos2[1]) ** 2)
 
-    def reset(self, agent_type = None, agent_positions = None):
+    def reset(self, agent_type=None, agent_positions=None):
         """ Overrides reset() to allow changes in agent appearance between
         missions."""
         if agent_type and agent_type != self._agent_type or \

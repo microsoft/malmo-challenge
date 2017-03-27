@@ -136,7 +136,7 @@ class ReplayMemory(object):
         self._states = np.empty((max_size,) + state_shape, dtype=np.float32)
         self._actions = np.empty(max_size, dtype=np.uint8)
         self._rewards = np.empty(max_size, dtype=np.float32)
-        self._terminals = np.empty(max_size, dtype=np.uint8)
+        self._terminals = np.empty(max_size, dtype=np.bool)
 
     def append(self, state, action, reward, is_terminal):
         """
@@ -150,7 +150,7 @@ class ReplayMemory(object):
         assert state.shape == self._state_shape, \
             'Invalid state shape (required: %s, got: %s)' % (self._state_shape, state.shape)
 
-        self._states[self._pos] = state
+        self._states[self._pos, ...] = state
         self._actions[self._pos] = action
         self._rewards[self._pos] = reward
         self._terminals[self._pos] = is_terminal
@@ -190,6 +190,14 @@ class ReplayMemory(object):
         :return: Integer > 0
         """
         return self._max_size
+
+    @property
+    def history_length(self):
+        """
+        Number of states stacked along the first axis
+        :return: int >= 1
+        """
+        return 1
 
     def sample(self, size, replace=False):
         """
@@ -235,8 +243,8 @@ class ReplayMemory(object):
         """
         indexes = self.sample(size)
 
-        pre_states = np.array([self.get_state(index - 1) for index in indexes], dtype=np.float32)
-        post_states = np.array([self.get_state(index) for index in indexes], dtype=np.float32)
+        pre_states = np.array([self.get_state(index) for index in indexes], dtype=np.float32)
+        post_states = np.array([self.get_state(index + 1) for index in indexes], dtype=np.float32)
         actions = self._actions[indexes]
         rewards = self._rewards[indexes]
         terminals = self._terminals[indexes]
