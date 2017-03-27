@@ -65,7 +65,7 @@ class GymEnvironment(VideoCapableEnvironment):
 
     @property
     def lives(self):
-        return self._env.ale.lives()
+        return self._env.env.ale.lives()
 
     @property
     def frame(self):
