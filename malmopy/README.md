@@ -12,7 +12,7 @@ training sessions.
 
 The CNTK Python binding can be installed by running the installation script 
 ([more information here](https://github.com/Microsoft/CNTK/wiki/Setup-CNTK-on-your-machine)).
-Follow the installation process after what you should be able to import cntk.  
+After following the installation process you should be able to import CNTK.
 
 ___Note that every time you will want to run experiment with CNTK you will need to activate the cntk-pyXX environment.___
 
@@ -51,8 +51,8 @@ while True:
 ```
 
 ## Some comments:
-- GymEnvironment monitoring_path is used to record short epsiode videos of the agent
-- Temporal Memory generates sample w.r.t to the history_length previous state
+- The GymEnvironment monitoring_path is used to record short epsiode videos of the agent
+- Temporal Memory generates a sample w.r.t to the history_length previous state
   - For example with history_length = 4 a sample is [s(t-3), s(t-2), s(t-1), s(t)]
 - QNeuralNetwork input_shape is the shape of a sample from the TemporalMemory (history_length, width, height)
 - QNeuralNetwork output_shape is the number of actions available for the environment (one neuron per action)

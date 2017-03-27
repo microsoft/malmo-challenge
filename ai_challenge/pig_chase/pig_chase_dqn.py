@@ -29,9 +29,9 @@ from malmopy.model.chainer import QNeuralNetwork, DQNChain
 from common import parse_clients_args, visualize_training, ENV_AGENT_NAMES
 from agent import PigChaseChallengeAgent, PigChaseQLearnerAgent
 from environment import PigChaseEnvironment, PigChaseSymbolicStateBuilder
-from malmopy.environment.malmo import MalmoALEStateBuilder
 
-from malmopy.agent import TemporalMemory
+from malmopy.environment.malmo import MalmoALEStateBuilder
+from malmopy.agent import TemporalMemory, RandomAgent
 
 try:
     from malmopy.visualization.tensorboard import TensorboardVisualizer
@@ -45,7 +45,7 @@ sys.path.insert(0, os.getcwd())
 sys.path.insert(1, os.path.join(os.path.pardir, os.getcwd()))
 
 DQN_FOLDER = 'results/baselines/%s/dqn/%s-%s'
-EPOCH_SIZE = 250000
+EPOCH_SIZE = 100000
 
 
 def agent_factory(name, role, clients, device, max_epochs, logdir, visualizer):
@@ -85,7 +85,13 @@ def agent_factory(name, role, clients, device, max_epochs, logdir, visualizer):
                                       model, memory, 0.99, 32, 50000,
                                       explorer=explorer, visualizer=visualizer)
 
-        obs = env.reset()
+        agent = PigChaseChallengeAgent(name)
+        if type(agent.current_agent) == RandomAgent:
+            agent_type = PigChaseEnvironment.AGENT_TYPE_1
+        else:
+            agent_type = PigChaseEnvironment.AGENT_TYPE_2
+
+        obs = env.reset(agent_type)
         reward = 0
         agent_done = False
         viz_rewards = []
@@ -100,12 +106,17 @@ def agent_factory(name, role, clients, device, max_epochs, logdir, visualizer):
                 agent.inject_summaries(step)
                 viz_rewards = []
 
-                obs = env.reset()
+                if type(agent.current_agent) == RandomAgent:
+                    agent_type = PigChaseEnvironment.AGENT_TYPE_1
+                else:
+                    agent_type = PigChaseEnvironment.AGENT_TYPE_2
+
+                obs = env.reset(agent_type)
                 while obs is None:
                     # this can happen if the episode ended with the first
                     # action of the other agent
                     print('Warning: received obs == None.')
-                    obs = env.reset()
+                    obs = env.reset(agent_type)
 
             # select an action
             action = agent.act(obs, reward, agent_done, is_training=True)

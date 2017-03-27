@@ -40,7 +40,7 @@ class LinearEpsilonGreedyExplorer(BaseExplorer):
 
 
     This implementation uses linear interpolation between
-    epsilon_max and epsilon_min to generate linearly anneal epsilon as a function of the current episode.
+    epsilon_max and epsilon_min to linearly anneal epsilon as a function of the current episode.
 
     3 cases exists:
         - If 0 <= episode < eps_min_time then epsilon = interpolator(episode)

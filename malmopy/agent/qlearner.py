@@ -120,7 +120,8 @@ class TemporalMemory(ReplayMemory):
     @property
     def history_length(self):
         """
-        Visual memory length (ie. number of previous frames included for each sample)
+        Visual memory length 
+        (ie. the number of previous frames included for each sample)
         :return: Integer >= 0
         """
         return self._history_length
@@ -129,7 +130,7 @@ class TemporalMemory(ReplayMemory):
 class History(object):
     """
     Accumulator keeping track of the N previous frames to be used by the agent
-    for evaluation purpose
+    for evaluation
     """
 
     def __init__(self, shape):
