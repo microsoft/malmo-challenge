@@ -28,8 +28,8 @@ from malmopy.model.chainer import QNeuralNetwork, DQNChain
 
 from common import parse_clients_args, visualize_training, ENV_AGENT_NAMES
 from agent import PigChaseChallengeAgent, PigChaseQLearnerAgent
-from environment import PigChaseEnvironment, PigChaseSymbolicStateBuilder
-from malmopy.environment.malmo import MalmoALEStateBuilder
+from environment import PigChaseEnvironment, PigChaseSymbolicStateBuilder, \
+    PigChaseTopDownStateBuilder
 
 from malmopy.agent import TemporalMemory
 
@@ -74,11 +74,11 @@ def agent_factory(name, role, clients, device, max_epochs, logdir, visualizer):
             obs, reward, agent_done = env.do(action)
 
     else:
-        env = PigChaseEnvironment(clients, MalmoALEStateBuilder(),
+        env = PigChaseEnvironment(clients, PigChaseTopDownStateBuilder(True),
                                   role=role, randomize_positions=True)
-        memory = TemporalMemory(100000, (84, 84))
-        chain = DQNChain((memory.history_length, 84, 84), env.available_actions)
-        target_chain = DQNChain((memory.history_length, 84, 84), env.available_actions)
+        memory = TemporalMemory(100000, (18, 18))
+        chain = DQNChain((memory.history_length, 18, 18), env.available_actions)
+        target_chain = DQNChain((memory.history_length, 18, 18), env.available_actions)
         model = QNeuralNetwork(chain, target_chain, device)
         explorer = LinearEpsilonGreedyExplorer(1, 0.1, 1000000)
         agent = PigChaseQLearnerAgent(name, env.available_actions,
