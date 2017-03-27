@@ -1,5 +1,7 @@
 # The Malmo Collaborative AI Challenge
 
+[![Join the chat at https://gitter.im/malmo-challenge/Lobby](https://badges.gitter.im/malmo-challenge/Lobby.svg)](https://gitter.im/malmo-challenge/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 This repository contains the task definition and example code for the [Malmo Collaborative AI Challenge](https://www.microsoft.com/en-us/research/academic-program/collaborative-ai-challenge/). 
 <!-- ## Purpose -->
 This challenge is organized to encourage research in collaborative AI - to work towards AI agents 
