@@ -110,6 +110,7 @@ def agent_factory(name, role, baseline_agent, clients, max_epochs,
             if env.done:
                 while True:
                     visualize_training(visualizer, step, viz_rewards)
+                    agent.inject_summaries(step)
                     viz_rewards = []
                     obs = env.reset()
                     if obs:
@@ -121,7 +122,7 @@ def agent_factory(name, role, baseline_agent, clients, max_epochs,
             obs, reward, agent_done = env.do(action)
             viz_rewards.append(reward)
 
-            agent.inject_summaries(step)
+            #agent.inject_summaries(step)
 
 
 def run_experiment(agents_def):

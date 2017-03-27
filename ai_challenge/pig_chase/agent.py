@@ -45,6 +45,7 @@ class TabularQLearnerAgent(BaseAgent):
         self._last_action_index = None
         self._learning_rate = 0.05
         self._discount_rate = 0.95
+        self._rewards = []
 
     def _get_state_hash(self, state):
         entities = state[1]
@@ -57,6 +58,7 @@ class TabularQLearnerAgent(BaseAgent):
         return hash
 
     def act(self, new_state, reward, done, is_training=False):
+        self._rewards.append(reward)
         new_hash = self._get_state_hash(new_state)
         if not new_hash in self._QTable:
             self._QTable[new_hash] = [0.0 for act in ENV_ACTIONS]
@@ -81,6 +83,15 @@ class TabularQLearnerAgent(BaseAgent):
         self._last_hash = new_hash
         return self._last_action_index
 
+    def inject_summaries(self, idx):
+        self.visualize(idx, "%s/episode mean reward" % self.name, np.asscalar(np.mean(self._rewards)))
+        qvalues = np.empty((len(self._QTable), len(ENV_ACTIONS)))
+        for i, key in enumerate(self._QTable):
+            qvalues[i] = self._QTable[key]
+        self.visualize(idx, "%s/episode mean q" % self.name, np.asscalar(np.mean(qvalues)))
+        self.visualize(idx, "%s/episode mean stddev q" % self.name, np.asscalar(np.std(qvalues)))
+        self._rewards = []
+
 class PigChaseQLearnerAgent(QLearnerAgent):
     """A thin wrapper around QLearnerAgent that normalizes rewards to [-1,1]"""
 
@@ -89,7 +100,6 @@ class PigChaseQLearnerAgent(QLearnerAgent):
         reward /= ENV_CAUGHT_REWARD
         return super(PigChaseQLearnerAgent, self).act(state, reward, done,
                                                       is_training)
-
 
 class PigChaseChallengeAgent(BaseAgent):
     """Pig Chase challenge agent - behaves focused or random."""
