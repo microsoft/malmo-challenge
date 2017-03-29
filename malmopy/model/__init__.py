@@ -15,22 +15,7 @@
 # SOFTWARE.
 # ===================================================================================================================
 
-version: '3'
-services:
-  malmo1:
-    image: malmo:latest
-    expose:
-      - "10000"
-  malmo2:
-      image: malmo:latest
-      expose:
-        - "10000"
-  agents:
-      image: malmopy-cntk-cpu-py27:latest
-      working_dir: /root/malmo-challenge/ai_challenge/pig_chase
-      command: bash -c "python pig_chase_baseline.py malmo1:10000 malmo2:10000 & tensorboard --logdir 'results' --port 6006"
-      ports:
-        - "6006:6006"
-      links:
-        - malmo1
-        - malmo2
+from __future__ import absolute_import
+
+from .model import *
+

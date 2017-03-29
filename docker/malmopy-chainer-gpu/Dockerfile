@@ -15,12 +15,12 @@
 # SOFTWARE.
 # ===================================================================================================================
 
-FROM nvidia/cuda:8.0-cudnn5-devel
+FROM nvidia/cuda:8.0-cudnn5-devel-ubuntu16.04
 
 
 # Version variables
 ENV MALMO_VERSION 0.21.0
-ENV MALMOPY_VERSION 1.0.0RC1
+ENV MALMOPY_VERSION 0.1.0
 
 RUN apt-get update -y && \
     apt-get install -y --no-install-recommends \
@@ -29,6 +29,8 @@ RUN apt-get update -y && \
     python-pip \
     python-setuptools \
     cmake \
+    ssh \
+    git-all \
     zlib1g-dev \
 
     # install Malmo dependencies
@@ -55,9 +57,10 @@ RUN wget https://github.com/Microsoft/malmo/releases/download/$MALMO_VERSION/Mal
 ENV MALMO_XSD_PATH /root/Malmo/Schemas
 ENV PYTHONPATH /root/Malmo/Python_Examples
 
+# add and install malmopy, malmo challenge task and samples
 WORKDIR /root
-RUN wget https://malmoexperimentsgrp975.blob.core.windows.net/malmo-drop/malmopy-$MALMOPY_VERSION.zip -P malmopy && \
-    cd malmopy && \
-    unzip malmopy-$MALMOPY_VERSION.zip && \
-    rm malmopy-$MALMOPY_VERSION.zip && \
-    pip install -e '.[all]'
+RUN git clone https://github.com/Microsoft/malmo-challenge.git && \
+    cd malmo-challenge && \
+    git checkout tags/$MALMOPY_VERSION -b latest
+WORKDIR /root/malmo-challenge
+RUN pip install -e '.[all]'

@@ -20,23 +20,29 @@ from __future__ import division
 import sys
 import time
 from collections import namedtuple
-if sys.version_info.major == 2:
-    from Tkinter import Canvas, W
-    import ttk
-else:
-    from tkinter import ttk, Canvas, W
+from tkinter import ttk, Canvas, W
 
 import numpy as np
-from common import visualize_training, Entity, ENV_TARGET_NAMES, ENV_ENTITIES, ENV_AGENT_NAMES,\
-        ENV_ACTIONS, ENV_CAUGHT_REWARD, ENV_BOARD_SHAPE
+from common import visualize_training, Entity, ENV_TARGET_NAMES, ENV_ENTITIES, ENV_AGENT_NAMES, \
+    ENV_ACTIONS, ENV_CAUGHT_REWARD, ENV_BOARD_SHAPE
 from six.moves import range
 
 from malmopy.agent import AStarAgent
-from malmopy.agent import BaseAgent, RandomAgent
+from malmopy.agent import QLearnerAgent, BaseAgent, RandomAgent
 from malmopy.agent.gui import GuiAgent
 
 P_FOCUSED = .75
 CELL_WIDTH = 33
+
+
+class PigChaseQLearnerAgent(QLearnerAgent):
+    """A thin wrapper around QLearnerAgent that normalizes rewards to [-1,1]"""
+
+    def act(self, state, reward, done, is_training=False):
+
+        reward /= ENV_CAUGHT_REWARD
+        return super(PigChaseQLearnerAgent, self).act(state, reward, done,
+                                                      is_training)
 
 
 class PigChaseChallengeAgent(BaseAgent):
@@ -90,6 +96,9 @@ class FocusedAgent(AStarAgent):
         if done:
             self._action_list = []
             self._previous_target_pos = None
+
+        if state is None:
+            return np.random.randint(0, self.nb_actions)
 
         entities = state[1]
         state = state[0]
@@ -263,7 +272,9 @@ class PigChaseHumanAgent(GuiAgent):
             self._on_episode_end()
 
         # build symbolic view
-        board, _ = self._env._internal_symbolic_builder.build(self._env)
+        board = None
+        if self._env is not None:
+            board, _ = self._env._internal_symbolic_builder.build(self._env)
         if board is not None:
             board = board.T
             self._symbolic_view.delete('all')  # Remove all previous items from Tkinter tracking
@@ -410,10 +421,20 @@ class PigChaseHumanAgent(GuiAgent):
         self._on_experiment_updated(None, 0, self._env.done)
 
     def _on_episode_end(self):
-        self._episode_has_started = False
-        self._episode_has_ended = True
+        # do a turn to ensure we get the final reward and observation
+        no_op_action = 0
+        _, reward, done = self._env.do(no_op_action)
+        self._action_taken += 1
+        self._rewards.append(reward)
+        self._on_experiment_updated(no_op_action, reward, done)
+
+        # report scores
         self._scores.append(sum(self._rewards))
         self.visualize(self._episode, 'Reward', sum(self._rewards))
+
+        # set flags to start a new episode
+        self._episode_has_started = False
+        self._episode_has_ended = True
 
     def _on_experiment_updated(self, action, reward, is_done):
         self._current_episode_lbl.config(text='Episode: %d' % self._episode)

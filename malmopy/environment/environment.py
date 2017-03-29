@@ -44,12 +44,17 @@ class ALEStateBuilder(StateBuilder):
     This class assumes the environment.state() returns a numpy array.
     """
 
-    def __init__(self, shape=(84, 84)):
+    SCALE_FACTOR = 1. / 255.
+
+    def __init__(self, shape=(84, 84), normalize=True):
         self._shape = shape
+        self._normalize = bool(normalize)
 
     def build(self, environment):
         if not isinstance(environment, np.ndarray):
-            raise ValueError('environment type is not a numpy.ndarray (got %d)' % str(type(environment)))
+            raise ValueError(
+                'environment type is not a numpy.ndarray (got %s)' % str(
+                    type(environment)))
 
         state = environment
 
@@ -63,7 +68,7 @@ class ALEStateBuilder(StateBuilder):
         if state.shape != self._shape:
             state = resize(state, self._shape)
 
-        return state
+        return (state * ALEStateBuilder.SCALE_FACTOR).astype(np.float32)
 
 
 class BaseEnvironment(object):
