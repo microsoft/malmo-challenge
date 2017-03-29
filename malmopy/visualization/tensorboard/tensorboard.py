@@ -30,7 +30,10 @@ class TensorboardVisualizer(BaseVisualizer):
     """
 
     def __init__(self):
-        self._session = tf.Session()
+        super(TensorboardVisualizer, self).__init__()
+
+        gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.01)
+        self._session = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
         self._train_writer = None
 
     def initialize(self, logdir, model, converter=None):
