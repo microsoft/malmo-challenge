@@ -214,7 +214,7 @@ class QNeuralNetwork(QModel):
         q_subset = F.reshape(F.select_item(q, actions), (batch_size, 1))
         y = y.reshape(batch_size, 1)
 
-        loss = F.huber_loss(q_subset, y, 1.0)
+        loss = F.sum(F.huber_loss(q_subset, y, 1.0))
 
         self._model.cleargrads()
         loss.backward()
