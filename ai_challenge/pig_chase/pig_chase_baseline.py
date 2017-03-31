@@ -110,6 +110,11 @@ def agent_factory(name, role, baseline_agent, clients, max_epochs,
             if env.done:
                 while True:
                     visualize_training(visualizer, step, viz_rewards)
+                    tag = "Episode End Conditions"
+                    visualizer.add_entry(step, '%s/timeouts per episode' % tag, env.end_result == "command_quota_reached")
+                    visualizer.add_entry(step, '%s/agent_1 defaults per episode' % tag, env.end_result == "Agent_1_defaulted")
+                    visualizer.add_entry(step, '%s/agent_2 defaults per episode' % tag, env.end_result == "Agent_2_defaulted")
+                    visualizer.add_entry(step, '%s/pig caught per episode' % tag, env.end_result == "caught_the_pig")
                     agent.inject_summaries(step)
                     viz_rewards = []
                     obs = env.reset()
