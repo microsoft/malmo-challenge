@@ -276,9 +276,25 @@ class PigChaseEnvironment(MalmoEnvironment):
     def is_valid(self, world_state):
         """ Pig Chase Environment is valid if the the board and entities are present """
 
-        if super(PigChaseEnvironment, self).is_valid(world_state):
-            obs = json.loads(world_state.observations[-1].text)
+        if not super(PigChaseEnvironment, self).is_valid(world_state):
+            return False
 
-            # Check we have entities
-            return (ENV_ENTITIES in obs) and (ENV_BOARD in obs)
-        return False
+        # Check we have entities
+        obs = json.loads(world_state.observations[-1].text)
+        if not (ENV_ENTITIES in obs) or not (ENV_BOARD in obs):
+            return False
+
+        # Check agent entities are correctly positioned:
+        entities = obs[ENV_ENTITIES]
+        for ent in entities:
+            if ent['name'] in ENV_AGENT_NAMES:
+                if abs((ent['x'] - int(ent['x'])) - 0.5) > 0.01:
+                    print "Waiting for ",ent['name'],"x - currently",ent['x']
+                    return False
+                if abs((ent['z'] - int(ent['z'])) - 0.5) > 0.01:
+                    print "Waiting for ",ent['name'],"z - currently",ent['z']
+                    return False
+                if (int(ent['yaw']) % 90) != 0:
+                    print "Waiting for ",ent['name'],"yaw - currently",ent['yaw']
+                    return False
+        return True
