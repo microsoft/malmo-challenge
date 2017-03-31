@@ -19,6 +19,7 @@ from __future__ import division
 
 import sys
 import time
+import pickle
 from collections import namedtuple
 from tkinter import ttk, Canvas, W
 
@@ -91,6 +92,16 @@ class TabularQLearnerAgent(BaseAgent):
         self.visualize(idx, "%s/episode mean q" % self.name, np.asscalar(np.mean(qvalues)))
         self.visualize(idx, "%s/episode mean stddev q" % self.name, np.asscalar(np.std(qvalues)))
         self._rewards = []
+
+    def save(self, out_dir):
+        outfile = open(out_dir, 'wb')
+        pickle.dump(self._QTable, outfile)
+        outfile.close()
+
+    def load(self, out_dir):
+        infile = open(out_dir, 'rb')
+        self._QTable = pickle.load(infile)
+        infile.close()
 
 class PigChaseQLearnerAgent(QLearnerAgent):
     """A thin wrapper around QLearnerAgent that normalizes rewards to [-1,1]"""
