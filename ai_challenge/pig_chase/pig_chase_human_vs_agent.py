@@ -37,7 +37,7 @@ from environment import PigChaseEnvironment, PigChaseSymbolicStateBuilder
 
 MAX_ACTIONS = 25 # this should match the mission definition, used for display only
 
-def agent_factory(name, role, kind, clients, max_episodes, max_actions, logdir, quit):
+def agent_factory(name, role, kind, clients, max_episodes, max_actions, logdir, quit, model_file):
     assert len(clients) >= 2, 'There are not enough Malmo clients in the pool (need at least 2)'
 
     clients = parse_clients_args(clients)
@@ -53,6 +53,8 @@ def agent_factory(name, role, kind, clients, max_episodes, max_actions, logdir, 
             agent = FocusedAgent(name, ENV_TARGET_NAMES[0])
         elif kind == 'tabq':
             agent = TabularQLearnerAgent(name)
+            if model_file != '':
+                agent.load(model_file)
         else:
             agent = RandomAgent(name ,env.available_actions)
 
@@ -113,13 +115,14 @@ if __name__ == '__main__':
     arg_parser.add_argument('-e', '--episodes', type=int, default=10, help='Number of episodes to run.')
     arg_parser.add_argument('-k', '--kind', type=str, default='challenge', choices=['astar', 'random', 'tabq', 'challenge'],
                             help='The kind of agent to play with (random, astar, tabq or challenge).')
+    arg_parser.add_argument('-m', '--model_file', type=str, default='', help='Model file with which to initialise agent, if appropriate')
     arg_parser.add_argument('clients', nargs='*',
                             default=['127.0.0.1:10000', '127.0.0.1:10001'],
                             help='Malmo clients (ip(:port)?)+')
     args = arg_parser.parse_args()
 
     logdir = path.join('results/pig-human', datetime.utcnow().isoformat())
-    agents = [{'name': agent, 'role': role, 'kind': args.kind,
+    agents = [{'name': agent, 'role': role, 'kind': args.kind, 'model_file': args.model_file,
                'clients': args.clients, 'max_episodes': args.episodes,
                'max_actions': MAX_ACTIONS, 'logdir': logdir}
               for role, agent in enumerate(ENV_AGENT_NAMES)]
