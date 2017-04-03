@@ -158,10 +158,10 @@ def run_experiment(agents_def):
 
 if __name__ == '__main__':
     arg_parser = ArgumentParser('Pig Chase baseline experiment')
-    arg_parser.add_argument('-t', '--type', type=str, default='tabq',
+    arg_parser.add_argument('-t', '--type', type=str, default='astar',
                             choices=['tabq', 'astar', 'random'],
                             help='The type of baseline to run.')
-    arg_parser.add_argument('-e', '--epochs', type=int, default=5000000,
+    arg_parser.add_argument('-e', '--epochs', type=int, default=5,
                             help='Number of epochs to run.')
     arg_parser.add_argument('clients', nargs='*',
                             default=['127.0.0.1:10000', '127.0.0.1:10001'],
