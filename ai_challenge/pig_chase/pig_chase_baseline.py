@@ -104,7 +104,7 @@ def agent_factory(name, role, baseline_agent, clients, max_epochs,
         viz_rewards = []
 
         max_training_steps = EPOCH_SIZE * max_epochs
-        for step in xrange(1, max_training_steps+1):
+        for step in range(1, max_training_steps+1):
 
             # check if env needs reset
             if env.done:
