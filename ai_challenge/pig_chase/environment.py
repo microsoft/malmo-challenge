@@ -90,6 +90,7 @@ class PigChaseTopDownStateBuilder(MalmoStateBuilder):
 
     def __init__(self, gray=True):
         self._gray = bool(gray)
+        self._print_state_diagnostics = False
 
     def build(self, environment):
         world_obs = environment.world_observations
@@ -269,6 +270,10 @@ class PigChaseEnvironment(MalmoEnvironment):
         state, reward, done = super(PigChaseEnvironment, self).do(action)
         return state, reward, self.done
 
+    def _debug_output(self, str):
+        if self._print_state_diagnostics:
+            print(str)
+
     def is_valid(self, world_state):
         """ Pig Chase Environment is valid if the the board and entities are present """
 
@@ -285,12 +290,12 @@ class PigChaseEnvironment(MalmoEnvironment):
         for ent in entities:
             if ent['name'] in ENV_AGENT_NAMES:
                 if abs((ent['x'] - int(ent['x'])) - 0.5) > 0.01:
-                    print "Waiting for ",ent['name'],"x - currently",ent['x']
+                    self._debug_output("Waiting for " + ent['name'] + " x - currently " + ent['x'])
                     return False
                 if abs((ent['z'] - int(ent['z'])) - 0.5) > 0.01:
-                    print "Waiting for ",ent['name'],"z - currently",ent['z']
+                    self._debug_output("Waiting for " + ent['name'] + " z - currently " + ent['z'])
                     return False
                 if (int(ent['yaw']) % 90) != 0:
-                    print "Waiting for ",ent['name'],"yaw - currently",ent['yaw']
+                    self._debug_output("Waiting for " + ent['name'] + " yaw - currently " + ent['yaw'])
                     return False
         return True
