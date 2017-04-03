@@ -35,7 +35,7 @@ except ImportError:
     from malmopy.visualization import ConsoleVisualizer
 
 from common import parse_clients_args, visualize_training, ENV_AGENT_NAMES, ENV_TARGET_NAMES
-from agent import PigChaseChallengeAgent, FocusedAgent, TabularQLearnerAgent
+from agent import PigChaseChallengeAgent, FocusedAgent, TabularQLearnerAgent, get_agent_type
 from environment import PigChaseEnvironment, PigChaseSymbolicStateBuilder
 
 # Enforce path
@@ -58,12 +58,7 @@ def agent_factory(name, role, baseline_agent, clients, max_epochs,
 
     if role == 0:
         agent = PigChaseChallengeAgent(name)
-
-        if type(agent.current_agent) == RandomAgent:
-            agent_type = PigChaseEnvironment.AGENT_TYPE_1
-        else:
-            agent_type = PigChaseEnvironment.AGENT_TYPE_2
-        obs = env.reset(agent_type)
+        obs = env.reset(get_agent_type(agent))
 
         reward = 0
         agent_done = False
@@ -71,7 +66,7 @@ def agent_factory(name, role, baseline_agent, clients, max_epochs,
         while True:
             if env.done:
                 while True:
-                    obs = env.reset()
+                    obs = env.reset(get_agent_type(agent))
                     if obs:
                         break
 
@@ -80,11 +75,7 @@ def agent_factory(name, role, baseline_agent, clients, max_epochs,
 
             # reset if needed
             if env.done:
-                if type(agent.current_agent) == RandomAgent:
-                    agent_type = PigChaseEnvironment.AGENT_TYPE_1
-                else:
-                    agent_type = PigChaseEnvironment.AGENT_TYPE_2
-                obs = env.reset(agent_type)
+                obs = env.reset(get_agent_type(agent))
 
             # take a step
             obs, reward, agent_done = env.do(action)
