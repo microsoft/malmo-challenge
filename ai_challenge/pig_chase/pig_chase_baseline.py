@@ -109,6 +109,8 @@ def agent_factory(name, role, baseline_agent, clients, max_epochs,
             # check if env needs reset
             if env.done:
                 while True:
+                    if len(viz_rewards) == 0:
+                        viz_rewards.append(0)
                     visualize_training(visualizer, step, viz_rewards)
                     tag = "Episode End Conditions"
                     visualizer.add_entry(step, '%s/timeouts per episode' % tag, env.end_result == "command_quota_reached")
