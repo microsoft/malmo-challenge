@@ -24,6 +24,7 @@ from datetime import datetime
 from os import path
 from threading import Thread, active_count
 from time import sleep
+from builtins import range
 
 from malmopy.agent import RandomAgent
 try:
