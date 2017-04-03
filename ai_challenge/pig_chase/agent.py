@@ -25,7 +25,7 @@ from tkinter import ttk, Canvas, W
 
 import numpy as np
 from common import visualize_training, Entity, ENV_TARGET_NAMES, ENV_ENTITIES, ENV_AGENT_NAMES, \
-    ENV_ACTIONS, ENV_CAUGHT_REWARD, ENV_BOARD_SHAPE
+    ENV_ACTIONS, ENV_CAUGHT_REWARD, ENV_BOARD_SHAPE, ENV_AGENT_TYPES
 from six.moves import range
 
 from malmopy.agent import AStarAgent
@@ -34,6 +34,20 @@ from malmopy.agent.gui import GuiAgent
 
 P_FOCUSED = .75
 CELL_WIDTH = 33
+
+def get_agent_type(agent):
+    if isinstance(agent, PigChaseChallengeAgent):
+        agent = agent.current_agent
+    if isinstance(agent, RandomAgent):
+        return ENV_AGENT_TYPES.RANDOM
+    elif isinstance(agent, FocusedAgent):
+        return ENV_AGENT_TYPES.FOCUSED
+    elif isinstance(agent, TabularQLearnerAgent):
+        return ENV_AGENT_TYPES.TABQ
+    elif isinstance(agent, PigChaseHumanAgent):
+        return ENV_AGENT_TYPES.HUMAN
+    else:
+        return ENV_AGENT_TYPES.OTHER
 
 class TabularQLearnerAgent(BaseAgent):
     """Pig Chase agent - uses Tabular Q-Learning."""

@@ -23,7 +23,7 @@ import re
 import numpy as np
 
 from common import Entity, ENV_ACTIONS, ENV_BOARD, ENV_ENTITIES, \
-    ENV_BOARD_SHAPE, ENV_AGENT_NAMES
+    ENV_BOARD_SHAPE, ENV_AGENT_NAMES, ENV_AGENT_TYPES
 
 from MalmoPython import MissionSpec
 from malmopy.environment.malmo import MalmoEnvironment, MalmoStateBuilder
@@ -157,11 +157,6 @@ class PigChaseEnvironment(MalmoEnvironment):
     the pig (high reward), or give up by leaving the pig pen (low reward).
     """
 
-    AGENT_TYPE_0 = 0
-    AGENT_TYPE_1 = 1
-    AGENT_TYPE_2 = 2
-    AGENT_TYPE_3 = 3
-
     VALID_START_POSITIONS = [
         (2.5,1.5), (3.5,1.5), (4.5,1.5), (5.5,1.5), (6.5,1.5),
         (2.5,2.5),            (4.5,2.5),            (6.5,2.5),
@@ -212,14 +207,15 @@ class PigChaseEnvironment(MalmoEnvironment):
         if self._role == 0:
             original_helmet = "diamond_helmet"
         new_helmet = original_helmet
-        if self._agent_type == PigChaseEnvironment.AGENT_TYPE_0:
-            new_helmet = "iron_helmet"
-        elif self._agent_type == PigChaseEnvironment.AGENT_TYPE_1:
+        if self._agent_type == ENV_AGENT_TYPES.RANDOM:
             new_helmet = "golden_helmet"
-        elif self._agent_type == PigChaseEnvironment.AGENT_TYPE_2:
+        elif self._agent_type == ENV_AGENT_TYPES.FOCUSED:
             new_helmet = "diamond_helmet"
-        elif self._agent_type == PigChaseEnvironment.AGENT_TYPE_3:
+        elif self._agent_type == ENV_AGENT_TYPES.HUMAN:
             new_helmet = "leather_helmet"
+        else:
+            new_helmet = "iron_helmet"
+
         xml = re.sub(r'type="%s"' % original_helmet,
                      r'type="%s"' % new_helmet, self._mission_xml)
         # set agent starting pos

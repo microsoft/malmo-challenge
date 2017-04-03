@@ -24,7 +24,8 @@ ENV_BOARD = 'board'
 ENV_BOARD_SHAPE = (9, 9)
 ENV_INDIVIDUAL_REWARD = 5
 ENV_CAUGHT_REWARD = 25
-
+class ENV_AGENT_TYPES:
+    RANDOM, FOCUSED, TABQ, DEEPQ, HUMAN, OTHER = range(0, 6)
 
 def parse_clients_args(args_clients):
     """
