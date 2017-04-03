@@ -90,7 +90,6 @@ class PigChaseTopDownStateBuilder(MalmoStateBuilder):
 
     def __init__(self, gray=True):
         self._gray = bool(gray)
-        self._print_state_diagnostics = False
 
     def build(self, environment):
         world_obs = environment.world_observations
@@ -190,6 +189,7 @@ class PigChaseEnvironment(MalmoEnvironment):
 
         self._randomize_positions = randomize_positions
         self._agent_type = None
+        self._print_state_diagnostics = False
 
     @property
     def state(self):
@@ -290,12 +290,12 @@ class PigChaseEnvironment(MalmoEnvironment):
         for ent in entities:
             if ent['name'] in ENV_AGENT_NAMES:
                 if abs((ent['x'] - int(ent['x'])) - 0.5) > 0.01:
-                    self._debug_output("Waiting for " + ent['name'] + " x - currently " + ent['x'])
+                    self._debug_output("Waiting for " + ent['name'] + " x - currently " + str(ent['x']))
                     return False
                 if abs((ent['z'] - int(ent['z'])) - 0.5) > 0.01:
-                    self._debug_output("Waiting for " + ent['name'] + " z - currently " + ent['z'])
+                    self._debug_output("Waiting for " + ent['name'] + " z - currently " + str(ent['z']))
                     return False
                 if (int(ent['yaw']) % 90) != 0:
-                    self._debug_output("Waiting for " + ent['name'] + " yaw - currently " + ent['yaw'])
+                    self._debug_output("Waiting for " + ent['name'] + " yaw - currently " + str(ent['yaw']))
                     return False
         return True
