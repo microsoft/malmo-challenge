@@ -58,8 +58,9 @@ class TabularQLearnerAgent(BaseAgent):
         self._QTable = {}
         self._last_hash = None
         self._last_action_index = None
-        self._learning_rate = 0.05
-        self._discount_rate = 0.95
+        self._learning_rate = 0.5
+        self._discount_rate = 0.99
+        self._epsilon = 0.1
         self._rewards = []
 
     def _get_state_hash(self, state):
@@ -94,7 +95,7 @@ class TabularQLearnerAgent(BaseAgent):
 
         # Choose best action for this step:
         top_q_indices = [i for i, val in enumerate(new_qvalues) if val == new_max_q]
-        self._last_action_index = np.random.choice(top_q_indices)
+        self._last_action_index = np.random.randint(len(ENV_ACTIONS)) if np.random.rand() < self._epsilon else np.random.choice(top_q_indices)
         self._last_hash = new_hash
         return self._last_action_index
 
