@@ -103,10 +103,10 @@ def agent_loop(agent, env, metrics_acc):
     episode = 0
     obs = env.reset()
 
-    while episode < 10:
+    while episode < 100:
         # check if env needs reset
         if env.done:
-            print('Episode %d (%.2f)%%' % (episode, (episode / 100) * 10.))
+            print('Episode %d (%.2f)%%' % (episode, (episode / 100) * 100.))
 
             obs = env.reset()
             while obs is None:
