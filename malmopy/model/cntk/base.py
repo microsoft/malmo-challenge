@@ -16,9 +16,9 @@
 # ===================================================================================================================
 
 import numpy as np
-from cntk.device import set_default_device, cpu, gpu
-from cntk.distributed import Communicator
-from cntk.learner import set_default_unit_gain_value
+from cntk.device import cpu, gpu, try_set_default_device
+from cntk.train.distributed import Communicator
+from cntk.learners import set_default_unit_gain_value
 from cntk.ops import abs, element_select, less, square, sqrt, reduce_sum, reduce_mean
 
 from ...visualization import Visualizable
@@ -149,7 +149,7 @@ class CntkModel(Visualizable):
         self._distributed = n_workers > 1
 
         if isinstance(device_id, int):
-            set_default_device(cpu() if device_id == -1 else gpu(device_id))
+            try_set_default_device(cpu() if device_id == -1 else gpu(device_id))
 
         set_default_unit_gain_value(unit_gain)
 
