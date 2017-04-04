@@ -19,17 +19,16 @@ from __future__ import absolute_import
 
 from cntk import Value
 from cntk.axis import Axis
-from cntk.initializer import he_uniform
-from cntk.layers import Input, Convolution, Dense, default_options
+from cntk.initializer import he_uniform, he_normal
+from cntk.layers import Convolution, Dense, default_options
+from cntk.layers.higher_order_layers import Sequential
 from cntk.learners import adam, momentum_schedule, learning_rate_schedule, \
     UnitType
-from cntk.models import Sequential
-from cntk.ops import relu, reduce_sum
+from cntk.ops import input, relu, reduce_sum
 from cntk.ops.functions import CloneMethod
-from cntk.train import Trainer
+from cntk.train.trainer import Trainer
 
-from . import CntkModel, as_learning_rate_by_sample, prepend_batch_axis, \
-    huber_loss
+from . import CntkModel, prepend_batch_axis, huber_loss
 from ..model import QModel
 from ...util import check_rank
 
@@ -95,11 +94,11 @@ class QNeuralNetwork(CntkModel, QModel):
         self._target = None
 
         # Input vars
-        self._environment = Input(in_shape, name='env',
+        self._environment = input(in_shape, name='env',
                                   dynamic_axes=(Axis.default_batch_axis()))
-        self._q_targets = Input(1, name='q_targets',
+        self._q_targets = input(1, name='q_targets',
                                 dynamic_axes=(Axis.default_batch_axis()))
-        self._actions = Input(output_shape, name='actions',
+        self._actions = input(output_shape, name='actions',
                               dynamic_axes=(Axis.default_batch_axis()))
 
         # Define the neural network graph
@@ -109,9 +108,7 @@ class QNeuralNetwork(CntkModel, QModel):
         )
 
         # Define the learning rate
-        lr_schedule = as_learning_rate_by_sample(learning_rate, minibatch_size,
-                                                 momentum, True)
-        lr_schedule = learning_rate_schedule(lr_schedule, UnitType.sample)
+        lr_schedule = learning_rate_schedule(learning_rate, UnitType.minibatch)
 
         # AdamSGD optimizer
         m_schedule = momentum_schedule(momentum)
@@ -143,8 +140,8 @@ class QNeuralNetwork(CntkModel, QModel):
                 Convolution((8, 8), 32, strides=(4, 4)),
                 Convolution((4, 4), 64, strides=(2, 2)),
                 Convolution((3, 3), 64, strides=(1, 1)),
-                Dense(512, init=he_uniform(0.01)),
-                Dense(self._nb_actions, activation=None, init=he_uniform(0.01))
+                Dense(512, init=he_normal(0.01)),
+                Dense(self._nb_actions, activation=None, init=he_normal(0.01))
             ])
             return model
 
@@ -189,3 +186,28 @@ class QNeuralNetwork(CntkModel, QModel):
         else:
             predictions = self._model.eval({self._environment: data})
         return predictions.squeeze()
+
+
+class ReducedQNeuralNetwork(QNeuralNetwork):
+    """
+    Represents a learning capable entity using CNTK, reduced model
+    """
+
+    def __init__(self, in_shape, output_shape, device_id=None,
+                 learning_rate=0.00025, momentum=0.9,
+                 minibatch_size=32, update_interval=10000,
+                 n_workers=1, visualizer=None):
+
+        QNeuralNetwork.__init__(self, in_shape, output_shape, device_id,
+                                learning_rate, momentum, minibatch_size, update_interval,
+                                n_workers, visualizer)
+
+    def _build_model(self):
+        with default_options(init=he_uniform(), activation=relu, bias=True):
+            model = Sequential([
+                Convolution((4, 4), 64, strides=(2, 2), name='conv1'),
+                Convolution((3, 3), 64, strides=(1, 1), name='conv2'),
+                Dense(512, name='dense1', init=he_normal(0.01)),
+                Dense(self._nb_actions, activation=None, init=he_normal(0.01), name='qvalues')
+            ])
+            return model
