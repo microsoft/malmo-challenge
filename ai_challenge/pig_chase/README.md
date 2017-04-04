@@ -66,6 +66,34 @@ python pig_chase_baseline.py -t random
 
 For additional command line options, see the usage instructions: `python pig_chase_baseline.py -h`.
 
+## Evaluate your agent
+
+We provide a commodity evaluator PigChaseEvaluator, which allows you to quickly evaluate
+performances of your agent.
+
+PigChaseEvaluator takes 2 arguments:
+- agent_100k : Your agent trained with 100k steps (100k train calls) 
+- agent_500k : Your agent trained with 500k steps (500k train calls)
+
+To evaluate your agent:
+
+``` python
+# Creates an agent trained with 100k train calls
+my_agent_100k = MyCustomAgent()
+
+# Creates an agent trained with 500k train calls
+my_agent_500k = MyCustomAgent()
+
+# You can pass a custom StateBuilder for your agent.
+# It will be used by the environment to generate state for your agent
+eval = PigChaseEvaluator(my_agent_100k, my_agent_500k, MyStateBuilder())
+
+# Run and save
+eval.run()
+eval.save('path/to/save.json')
+```
+
+
 ## Next steps
 
 To participate in the Collaborative AI Challenge, implement and train an agent that can effectively collaborate with any collaborator. Your agent can use either the first-person visual view, or the symbolic view (as demonstrated in the `FocusedAgent`). You can use any AI/learning approach you like - originality of the chose approach is part of the criteria for the challenge prizes. Can you come up with an agent learns to outperform the A-star baseline agent? Can an agent learn to play with a copy of itself? Can it outperform your own (human) score?
