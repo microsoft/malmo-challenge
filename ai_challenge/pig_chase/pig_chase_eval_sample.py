@@ -22,6 +22,8 @@ from malmopy.agent import RandomAgent
 
 
 if __name__ == '__main__':
+    # Warn for Agent name !!!
+
     clients = [('127.0.0.1', 10000), ('127.0.0.1', 10001)]
     agent = RandomAgent(ENV_AGENT_NAMES[1], 3)
 

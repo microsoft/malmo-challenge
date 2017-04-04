@@ -30,7 +30,6 @@ sys.path.insert(1, os.path.join(os.path.pardir, os.getcwd()))
 
 
 class PigChaseEvaluator(object):
-
     def __init__(self, clients, agent_100k, agent_500k, state_builder):
         assert len(clients) >= 2, 'Not enough clients provided'
 
@@ -47,13 +46,15 @@ class PigChaseEvaluator(object):
         :param filepath: Path where to store the results file
         :return: 
         """
-        from json import dumps
+        from json import dump
         from os.path import exists, join, pardir, abspath
         from os import makedirs
-        from numpy import mean
+        from numpy import mean, var
 
         # Compute metrics
-        metrics = {key: mean(buffer)
+        metrics = {key: {'mean': mean(buffer),
+                         'var': var(buffer),
+                         'count': len(buffer)}
                    for key, buffer in self._accumulators.items()}
 
         try:
@@ -63,7 +64,10 @@ class PigChaseEvaluator(object):
                 makedirs(parent)
 
             with open(filepath, 'w') as f_out:
-                f_out.write(dumps(metrics))
+                dump(metrics, f_out)
+
+            print('==================================')
+            print('Evaluation done, results wrote at %s' % filepath)
 
         except Exception as e:
             print('Unable to save the results: %s' % e)
@@ -76,13 +80,16 @@ class PigChaseEvaluator(object):
         print('==================================')
         print('Starting evaluation of Agent @100k')
 
-        p = Process(target=run_challenge_agent, args=(self._clients, ))
+        p = Process(target=run_challenge_agent, args=(self._clients,))
         p.start()
         sleep(5)
         agent_loop(self._agent_100k, env, self._accumulators['100k'])
         p.terminate()
 
-        p = Process(target=run_challenge_agent, args=(self._clients, ))
+        print('==================================')
+        print('Starting evaluation of Agent @500k')
+
+        p = Process(target=run_challenge_agent, args=(self._clients,))
         p.start()
         sleep(5)
         agent_loop(self._agent_500k, env, self._accumulators['500k'])
@@ -98,15 +105,16 @@ def run_challenge_agent(clients):
 
 
 def agent_loop(agent, env, metrics_acc):
+    EVAL_EPISODES = 100
     agent_done = False
     reward = 0
     episode = 0
     obs = env.reset()
 
-    while episode < 100:
+    while episode < EVAL_EPISODES:
         # check if env needs reset
         if env.done:
-            print('Episode %d (%.2f)%%' % (episode, (episode / 100) * 100.))
+            print('Episode %d (%.2f)%%' % (episode, (episode / EVAL_EPISODES) * 100.))
 
             obs = env.reset()
             while obs is None:
