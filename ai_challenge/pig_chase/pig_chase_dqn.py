@@ -59,14 +59,28 @@ def agent_factory(name, role, clients, backend,
         env = PigChaseEnvironment(clients, builder, role=role,
                                   randomize_positions=True)
         agent = PigChaseChallengeAgent(name)
+        if type(agent.current_agent) == RandomAgent:
+            agent_type = PigChaseEnvironment.AGENT_TYPE_1
+        else:
+            agent_type = PigChaseEnvironment.AGENT_TYPE_2
 
-        obs = env.reset()
+        obs = env.reset(agent_type)
         reward = 0
         agent_done = False
 
         while True:
             if env.done:
-                obs = env.reset()
+                if type(agent.current_agent) == RandomAgent:
+                    agent_type = PigChaseEnvironment.AGENT_TYPE_1
+                else:
+                    agent_type = PigChaseEnvironment.AGENT_TYPE_2
+
+                obs = env.reset(agent_type)
+                while obs is None:
+                    # this can happen if the episode ended with the first
+                    # action of the other agent
+                    print('Warning: received obs == None.')
+                    obs = env.reset(agent_type)
 
             # select an action
             action = agent.act(obs, reward, agent_done, is_training=True)
