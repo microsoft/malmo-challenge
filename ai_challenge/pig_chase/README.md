@@ -90,7 +90,7 @@ eval = PigChaseEvaluator(my_agent_100k, my_agent_500k, MyStateBuilder())
 
 # Run and save
 eval.run()
-eval.save('path/to/save.json')
+eval.save('My experiment 1', 'path/to/save.json')
 ```
 
 

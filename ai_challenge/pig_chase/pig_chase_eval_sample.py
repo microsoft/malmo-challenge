@@ -30,4 +30,4 @@ if __name__ == '__main__':
     eval = PigChaseEvaluator(clients, agent, agent, PigChaseTopDownStateBuilder())
     eval.run()
 
-    eval.save('pig_chase_results.json')
+    eval.save('My Exp 1', 'pig_chase_results.json')

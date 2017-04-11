@@ -39,13 +39,21 @@ class PigChaseEvaluator(object):
         self._state_builder = state_builder
         self._accumulators = {'100k': [], '500k': []}
 
-    def save(self, filepath):
+    def save(self, experiment_name, filepath):
         """
         Save the evaluation results in a JSON file 
-        understandable by the leaderboard
+        understandable by the leaderboard.
+        
+        Note: The leaderboard will not accept a submission if you already 
+        uploaded a file with the same experiment name.
+        
+        :param experiment_name: An identifier for the experiment
         :param filepath: Path where to store the results file
         :return: 
         """
+
+        assert experiment_name is not None, 'experiment_name cannot be None'
+
         from json import dump
         from os.path import exists, join, pardir, abspath
         from os import makedirs
@@ -56,6 +64,8 @@ class PigChaseEvaluator(object):
                          'var': var(buffer),
                          'count': len(buffer)}
                    for key, buffer in self._accumulators.items()}
+
+        metrics['experimentname'] = experiment_name
 
         try:
             filepath = abspath(filepath)
