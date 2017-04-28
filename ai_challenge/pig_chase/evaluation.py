@@ -77,7 +77,7 @@ class PigChaseEvaluator(object):
                 dump(metrics, f_out)
 
             print('==================================')
-            print('Evaluation done, results wrote at %s' % filepath)
+            print('Evaluation done, results written at %s' % filepath)
 
         except Exception as e:
             print('Unable to save the results: %s' % e)

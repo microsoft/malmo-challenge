@@ -69,7 +69,7 @@ For additional command line options, see the usage instructions: `python pig_cha
 ## Evaluate your agent
 
 We provide a commodity evaluator PigChaseEvaluator, which allows you to quickly evaluate
-performances of your agent.
+the performance of your agent.
 
 PigChaseEvaluator takes 2 arguments:
 - agent_100k : Your agent trained with 100k steps (100k train calls) 
