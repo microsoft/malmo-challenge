@@ -15,11 +15,7 @@
 # SOFTWARE.
 # ===================================================================================================================
 
-FROM microsoft/cntk:2.0.beta15.0-gpu-python2.7-cuda8.0-cudnn5.1
-
-# Version variables
-ENV MALMO_VERSION 0.21.0
-ENV MALMOPY_VERSION 0.1.0
+FROM nvidia/cuda:8.0-cudnn5-devel-ubuntu16.04
 
 RUN apt-get update -y && \
     apt-get install -y --no-install-recommends \
@@ -27,43 +23,43 @@ RUN apt-get update -y && \
     cmake \
     ssh \
     git-all \
-    zlib1g-dev \
-    python-dev \
     python-pip \
+    openjdk-8-jdk \
+    openmpi-bin \
 
     # install Malmo dependencies
-    libpython2.7 \
-    openjdk-7-jdk \
-    lua5.1 \
-    libxerces-c3.1 \
-    liblua5.1-0-dev \
-    libav-tools \
+    wget \
+    unzip \
+    xvfb \
+    cmake-qt-gui \
+    libboost-all-dev \
+    libpython2.7-dev \
+    swig \
+    xsdcxx \
+    libxerces-c-dev \
+    doxygen \
+    xsltproc \
     python-tk \
     python-imaging-tk \
-    wget \
-    unzip && \
-    rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
+    zlib1g \
+    zlib1g-dev && \
+    update-ca-certificates -f
 
-# Set CNTK Python PATH at first position to be picked automatically
-ENV PATH=/root/anaconda3/envs/cntk-py27/bin:$PATH
+ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64/
 
-# Update pip
-RUN /root/anaconda3/envs/cntk-py27/bin/pip install --upgrade pip
-
-# download and unpack Malmo
+# download and build Malmo
 WORKDIR /root
-RUN wget https://github.com/Microsoft/malmo/releases/download/$MALMO_VERSION/Malmo-$MALMO_VERSION-Linux-Ubuntu-16.04-64bit_withBoost.zip && \
-    unzip Malmo-$MALMO_VERSION-Linux-Ubuntu-16.04-64bit_withBoost.zip && \
-    rm Malmo-$MALMO_VERSION-Linux-Ubuntu-16.04-64bit_withBoost.zip && \
-    mv Malmo-$MALMO_VERSION-Linux-Ubuntu-16.04-64bit_withBoost Malmo
-
 ENV MALMO_XSD_PATH /root/Malmo/Schemas
-ENV PYTHONPATH /root/Malmo/Python_Examples
+ENV PYTHONPATH /root/Malmo/build/Malmo/src/PythonWrapper
+RUN git clone https://github.com/Microsoft/Malmo && \
+    wget https://raw.githubusercontent.com/bitfehler/xs3p/1b71310dd1e8b9e4087cf6120856c5f701bd336b/xs3p.xsl -P Malmo/Schemas && \
+    mkdir Malmo/build && \
+    cd Malmo/build && \
+    cmake -DCMAKE_BUILD_TYPE=Release -DINCLUDE_CSHARP=no -DINCLUDE_LUA=no .. && \
+    make -j
 
 # add and install malmopy, malmo challenge task and samples
 WORKDIR /root
-RUN git clone https://github.com/Microsoft/malmo-challenge.git && \
-    cd malmo-challenge && \
-    git checkout tags/$MALMOPY_VERSION -b latest
+RUN git clone https://github.com/Microsoft/malmo-challenge.git
 WORKDIR /root/malmo-challenge
-RUN pip install -e '.[all]'
+RUN pip install wheel && pip install setuptools && pip install https://cntk.ai/PythonWheel/GPU-1bit-SGD/cntk-2.0rc2-cp27-cp27mu-linux_x86_64.whl && pip install -e '.[all]'

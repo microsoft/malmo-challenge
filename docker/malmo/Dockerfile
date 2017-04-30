@@ -17,31 +17,48 @@
 
 FROM ubuntu:16.04
 
-ENV MALMO_VERSION 0.21.0
-
 # Install Malmo dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    openjdk-8-jdk \
     libxerces-c3.1 \
     libav-tools \
     wget \
     unzip \
-    xvfb && \
-    rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
+    xvfb \
+    build-essential \
+    git \
+    cmake \
+    cmake-qt-gui \
+    libboost-all-dev \
+    libpython2.7-dev \
+    swig \
+    xsdcxx \
+    libxerces-c-dev \
+    doxygen \
+    xsltproc \
+    python-tk \
+    python-imaging-tk \
+    zlib1g-dev \
+    zlib1g \
+    openjdk-8-jdk && \
+    rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* && \
+    update-ca-certificates -f
 
-# Download and unpack Malmo
+ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64
+
 WORKDIR /root
-RUN wget https://github.com/Microsoft/malmo/releases/download/$MALMO_VERSION/Malmo-$MALMO_VERSION-Linux-Ubuntu-16.04-64bit_withBoost.zip && \
-    unzip Malmo-$MALMO_VERSION-Linux-Ubuntu-16.04-64bit_withBoost.zip && \
-    rm Malmo-$MALMO_VERSION-Linux-Ubuntu-16.04-64bit_withBoost.zip && \
-    mv Malmo-$MALMO_VERSION-Linux-Ubuntu-16.04-64bit_withBoost Malmo
 ENV MALMO_XSD_PATH /root/Malmo/Schemas
+RUN git clone -b SockLogs https://github.com/Microsoft/Malmo && \
+    wget https://raw.githubusercontent.com/bitfehler/xs3p/1b71310dd1e8b9e4087cf6120856c5f701bd336b/xs3p.xsl -P Malmo/Schemas && \
+    mkdir Malmo/build && \
+    cd Malmo/build && \
+    cmake -DCMAKE_BUILD_TYPE=Release -DINCLUDE_CSHARP=no -DINCLUDE_LUA=no .. && \
+    make -j
 
 # Precompile Malmo mod
-RUN mkdir ~/.gradle && echo 'org.gradle.daemon=true\n' > ~/.gradle/gradle.properties
 WORKDIR /root/Malmo/Minecraft
-RUN ./gradlew setupDecompWorkspace
-RUN ./gradlew build
+RUN sed -i 's/gradlew runClient/gradlew --debug --stacktrace runClient/' launchClient.sh && \
+    ./gradlew setupDecompWorkspace && \
+    ./gradlew build
 
 # Unlimited framerate settings
 COPY options.txt /root/Malmo/Minecraft/run
@@ -54,3 +71,4 @@ EXPOSE 10000
 
 # Run Malmo
 ENTRYPOINT ["/root/run.sh", "/root/Malmo/Minecraft/launchClient.sh"]
+
