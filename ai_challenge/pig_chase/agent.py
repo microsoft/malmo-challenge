@@ -19,8 +19,14 @@ from __future__ import division
 
 import sys
 import time
+import six
+
 from collections import namedtuple
-from tkinter import ttk, Canvas, W
+
+if six.PY2:
+    from Tkinter import ttk, Canvas, W
+else:
+    from tkinter import ttk, Canvas, W
 
 import numpy as np
 from common import visualize_training, Entity, ENV_TARGET_NAMES, ENV_ENTITIES, ENV_AGENT_NAMES, \
