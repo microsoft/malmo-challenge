@@ -15,11 +15,10 @@
 # SOFTWARE.
 # ===================================================================================================================
 
-from common import ENV_AGENT_NAMES
+from ai_challenge.pig_chase.utils.common import ENV_AGENT_NAMES
+from ai_challenge.pig_chase.environment import PigChaseTopDownStateBuilder
 from evaluation import PigChaseEvaluator
-from environment import PigChaseTopDownStateBuilder
 from malmopy.agent import RandomAgent
-
 
 if __name__ == '__main__':
     # Warn for Agent name !!!

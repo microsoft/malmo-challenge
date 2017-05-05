@@ -20,13 +20,13 @@ from __future__ import division
 import sys
 import time
 from collections import namedtuple
-from tkinter import ttk, Canvas, W
 
 import numpy as np
-from common import visualize_training, Entity, ENV_TARGET_NAMES, ENV_ENTITIES, ENV_AGENT_NAMES, \
-    ENV_ACTIONS, ENV_CAUGHT_REWARD, ENV_BOARD_SHAPE
 from six.moves import range
+from tkinter import ttk, Canvas, W
 
+from ai_challenge.pig_chase.utils.common import Entity, ENV_TARGET_NAMES, ENV_ENTITIES, ENV_AGENT_NAMES, \
+    ENV_ACTIONS, ENV_CAUGHT_REWARD, ENV_BOARD_SHAPE
 from malmopy.agent import AStarAgent
 from malmopy.agent import QLearnerAgent, BaseAgent, RandomAgent
 from malmopy.agent.gui import GuiAgent

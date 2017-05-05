@@ -34,11 +34,13 @@ def parse_clients_args(args_clients):
     """
     return [str.split(str(client), ':') for client in args_clients]
 
+
 def visualize_training(visualizer, step, rewards, tag='Training'):
     visualizer.add_entry(step, '%s/reward per episode' % tag, sum(rewards))
     visualizer.add_entry(step, '%s/max.reward' % tag, max(rewards))
     visualizer.add_entry(step, '%s/min.reward' % tag, min(rewards))
-    visualizer.add_entry(step, '%s/actions per episode' % tag, len(rewards)-1)
+    visualizer.add_entry(step, '%s/actions per episode' % tag, len(rewards) - 1)
+
 
 class Entity(object):
     """ Wrap entity attributes """

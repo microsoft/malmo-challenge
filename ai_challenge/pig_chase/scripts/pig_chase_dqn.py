@@ -19,20 +19,18 @@ import os
 import sys
 from argparse import ArgumentParser
 from datetime import datetime
-
-import six
 from os import path
 from threading import Thread, active_count
 from time import sleep
 
+import six
+
+from ai_challenge.pig_chase.agents.basic_agents import PigChaseChallengeAgent, PigChaseQLearnerAgent
+from ai_challenge.pig_chase.utils.common import parse_clients_args, visualize_training, ENV_AGENT_NAMES
+from ai_challenge.pig_chase.environment import PigChaseEnvironment, PigChaseSymbolicStateBuilder
 from malmopy.agent import LinearEpsilonGreedyExplorer
-
-from common import parse_clients_args, visualize_training, ENV_AGENT_NAMES
-from agent import PigChaseChallengeAgent, PigChaseQLearnerAgent
-from environment import PigChaseEnvironment, PigChaseSymbolicStateBuilder
-
-from malmopy.environment.malmo import MalmoALEStateBuilder
 from malmopy.agent import TemporalMemory, RandomAgent
+from malmopy.environment.malmo import MalmoALEStateBuilder
 
 try:
     from malmopy.visualization.tensorboard import TensorboardVisualizer

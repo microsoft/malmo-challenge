@@ -19,10 +19,9 @@ import os
 import sys
 from time import sleep
 
-from common import parse_clients_args, ENV_AGENT_NAMES
-from agent import PigChaseChallengeAgent
-from common import ENV_AGENT_NAMES
-from environment import PigChaseEnvironment, PigChaseSymbolicStateBuilder
+from ai_challenge.pig_chase.agents.basic_agents import PigChaseChallengeAgent
+from ai_challenge.pig_chase.utils.common import ENV_AGENT_NAMES
+from ai_challenge.pig_chase.environment import PigChaseEnvironment, PigChaseSymbolicStateBuilder
 
 # Enforce path
 sys.path.insert(0, os.getcwd())

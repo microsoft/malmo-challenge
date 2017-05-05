@@ -15,19 +15,23 @@
 # SOFTWARE.
 # ===================================================================================================================
 
-import numpy as np
 import os
 import sys
-
 from argparse import ArgumentParser
 from datetime import datetime
-
-import six
 from os import path
 from threading import Thread, active_count
 from time import sleep
 
-from malmopy.agent import RandomAgent
+import six
+
+from ai_challenge.pig_chase.agents.basic_agents import PigChaseChallengeAgent, PigChaseQLearnerAgent
+from ai_challenge.pig_chase.utils.common import parse_clients_args, visualize_training, ENV_AGENT_NAMES
+from ai_challenge.pig_chase.environment import PigChaseEnvironment, PigChaseSymbolicStateBuilder, \
+    PigChaseTopDownStateBuilder
+from malmopy.agent import LinearEpsilonGreedyExplorer, RandomAgent
+from malmopy.agent import TemporalMemory
+
 try:
     from malmopy.visualization.tensorboard import TensorboardVisualizer
     from malmopy.visualization.tensorboard.cntk import CntkConverter
@@ -35,63 +39,72 @@ except ImportError:
     print('Cannot import tensorboard, using ConsoleVisualizer.')
     from malmopy.visualization import ConsoleVisualizer
 
-from common import parse_clients_args, visualize_training, ENV_AGENT_NAMES, ENV_TARGET_NAMES
-from agent import PigChaseChallengeAgent, FocusedAgent
-from environment import PigChaseEnvironment, PigChaseSymbolicStateBuilder
-
 # Enforce path
 sys.path.insert(0, os.getcwd())
 sys.path.insert(1, os.path.join(os.path.pardir, os.getcwd()))
 
-BASELINES_FOLDER = 'results/baselines/pig_chase/%s/%s'
-EPOCH_SIZE = 100
+DQN_FOLDER = 'results/baselines/%s/dqn/%s-%s'
+EPOCH_SIZE = 100000
 
 
-def agent_factory(name, role, baseline_agent, clients, max_epochs,
-                  logdir, visualizer):
+def agent_factory(name, role, clients, backend, device, max_epochs, logdir, visualizer):
 
     assert len(clients) >= 2, 'Not enough clients (need at least 2)'
     clients = parse_clients_args(clients)
 
-    builder = PigChaseSymbolicStateBuilder()
-    env = PigChaseEnvironment(clients, builder, role=role,
-                              randomize_positions=True)
-
     if role == 0:
-        agent = PigChaseChallengeAgent(name)
 
+        builder = PigChaseSymbolicStateBuilder()
+        env = PigChaseEnvironment(clients, builder, role=role,
+                                  randomize_positions=True)
+
+        agent = PigChaseChallengeAgent(name)
         if type(agent.current_agent) == RandomAgent:
             agent_type = PigChaseEnvironment.AGENT_TYPE_1
         else:
             agent_type = PigChaseEnvironment.AGENT_TYPE_2
-        obs = env.reset(agent_type)
 
+        obs = env.reset(agent_type)
         reward = 0
         agent_done = False
 
         while True:
-
-            # select an action
-            action = agent.act(obs, reward, agent_done, is_training=True)
-
-            # reset if needed
             if env.done:
                 if type(agent.current_agent) == RandomAgent:
                     agent_type = PigChaseEnvironment.AGENT_TYPE_1
                 else:
                     agent_type = PigChaseEnvironment.AGENT_TYPE_2
-                obs = env.reset(agent_type)
 
+                obs = env.reset(agent_type)
+                while obs is None:
+                    # this can happen if the episode ended with the first
+                    # action of the other agent
+                    print('Warning: received obs == None.')
+                    obs = env.reset(agent_type)
+
+            # select an action
+            action = agent.act(obs, reward, agent_done, is_training=True)
             # take a step
             obs, reward, agent_done = env.do(action)
 
-
     else:
+        env = PigChaseEnvironment(clients, PigChaseTopDownStateBuilder(True),
+                                  role=role, randomize_positions=True)
+        memory = TemporalMemory(100000, (18, 18))
 
-        if baseline_agent == 'astar':
-            agent = FocusedAgent(name, ENV_TARGET_NAMES[0])
+        if backend == 'cntk':
+            from malmopy.model.cntk import QNeuralNetwork
+            model = QNeuralNetwork((memory.history_length, 18, 18), env.available_actions, device)
         else:
-            agent = RandomAgent(name, env.available_actions)
+            from malmopy.model.chainer import QNeuralNetwork, ReducedDQNChain
+            chain = ReducedDQNChain((memory.history_length, 18, 18), env.available_actions)
+            target_chain = ReducedDQNChain((memory.history_length, 18, 18), env.available_actions)
+            model = QNeuralNetwork(chain, target_chain, device)
+
+        explorer = LinearEpsilonGreedyExplorer(1, 0.1, 1000000)
+        agent = PigChaseQLearnerAgent(name, env.available_actions,
+                                      model, memory, 0.99, 32, 50000,
+                                      explorer=explorer, visualizer=visualizer)
 
         obs = env.reset()
         reward = 0
@@ -105,8 +118,15 @@ def agent_factory(name, role, baseline_agent, clients, max_epochs,
             if env.done:
 
                 visualize_training(visualizer, step, viz_rewards)
+                agent.inject_summaries(step)
                 viz_rewards = []
+
                 obs = env.reset()
+                while obs is None:
+                    # this can happen if the episode ended with the first
+                    # action of the other agent
+                    print('Warning: received obs == None.')
+                    obs = env.reset()
 
             # select an action
             action = agent.act(obs, reward, agent_done, is_training=True)
@@ -114,12 +134,14 @@ def agent_factory(name, role, baseline_agent, clients, max_epochs,
             obs, reward, agent_done = env.do(action)
             viz_rewards.append(reward)
 
-            agent.inject_summaries(step)
+            if (step % EPOCH_SIZE) == 0:
+                if 'model' in locals():
+                    model.save('pig_chase-dqn_%d.model' % (step / EPOCH_SIZE))
 
 
 def run_experiment(agents_def):
-    assert len(agents_def) == 2, 'Not enough agents (required: 2, got: %d)'\
-                % len(agents_def)
+    assert len(agents_def) == 2, 'Not enough agents (required: 2, got: %d)' \
+                                 % len(agents_def)
 
     processes = []
     for agent in agents_def:
@@ -142,28 +164,29 @@ def run_experiment(agents_def):
 
 
 if __name__ == '__main__':
-    arg_parser = ArgumentParser('Pig Chase baseline experiment')
-    arg_parser.add_argument('-t', '--type', type=str, default='astar',
-                            choices=['astar', 'random'],
-                            help='The type of baseline to run.')
+    arg_parser = ArgumentParser('Pig Chase DQN experiment')
+    arg_parser.add_argument('-b', '--backend', type=str, choices=['cntk', 'chainer'],
+                           default='cntk', help='Neural network backend')
     arg_parser.add_argument('-e', '--epochs', type=int, default=5,
                             help='Number of epochs to run.')
     arg_parser.add_argument('clients', nargs='*',
                             default=['127.0.0.1:10000', '127.0.0.1:10001'],
                             help='Minecraft clients endpoints (ip(:port)?)+')
+    arg_parser.add_argument('-d', '--device', type=int, default=-1,
+                            help='GPU device on which to run the experiment.')
     args = arg_parser.parse_args()
 
-    logdir = BASELINES_FOLDER % (args.type, datetime.utcnow().isoformat())
+    logdir = path.join('results/pig_chase/dqn', datetime.utcnow().isoformat())
     if 'malmopy.visualization.tensorboard' in sys.modules:
         visualizer = TensorboardVisualizer()
         visualizer.initialize(logdir, None)
+
     else:
         visualizer = ConsoleVisualizer()
 
-    agents = [{'name': agent, 'role': role, 'baseline_agent': args.type,
-               'clients': args.clients, 'max_epochs': args.epochs,
-               'logdir': logdir, 'visualizer': visualizer}
+    agents = [{'name': agent, 'role': role, 'clients': args.clients,
+               'backend':args.backend, 'device': args.device,
+               'max_epochs': args.epochs, 'logdir': logdir, 'visualizer': visualizer}
               for role, agent in enumerate(ENV_AGENT_NAMES)]
 
     run_experiment(agents)
-
