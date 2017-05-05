@@ -19,12 +19,13 @@ import os
 import sys
 from argparse import ArgumentParser
 from datetime import datetime
+
+import six
 from os import path
 from threading import Thread, active_count
 from time import sleep
 
 from malmopy.agent import LinearEpsilonGreedyExplorer, RandomAgent
-from malmopy.model.chainer import QNeuralNetwork, DQNChain
 
 from common import parse_clients_args, visualize_training, ENV_AGENT_NAMES
 from agent import PigChaseChallengeAgent, PigChaseQLearnerAgent
@@ -48,7 +49,7 @@ DQN_FOLDER = 'results/baselines/%s/dqn/%s-%s'
 EPOCH_SIZE = 100000
 
 
-def agent_factory(name, role, clients, device, max_epochs, logdir, visualizer):
+def agent_factory(name, role, clients, backend, device, max_epochs, logdir, visualizer):
 
     assert len(clients) >= 2, 'Not enough clients (need at least 2)'
     clients = parse_clients_args(clients)
@@ -92,9 +93,16 @@ def agent_factory(name, role, clients, device, max_epochs, logdir, visualizer):
         env = PigChaseEnvironment(clients, PigChaseTopDownStateBuilder(True),
                                   role=role, randomize_positions=True)
         memory = TemporalMemory(100000, (18, 18))
-        chain = DQNChain((memory.history_length, 18, 18), env.available_actions)
-        target_chain = DQNChain((memory.history_length, 18, 18), env.available_actions)
-        model = QNeuralNetwork(chain, target_chain, device)
+
+        if backend == 'cntk':
+            from malmopy.model.cntk import QNeuralNetwork
+            model = QNeuralNetwork((memory.history_length, 18, 18), env.available_actions, device)
+        else:
+            from malmopy.model.chainer import QNeuralNetwork, ReducedDQNChain
+            chain = ReducedDQNChain((memory.history_length, 18, 18), env.available_actions)
+            target_chain = ReducedDQNChain((memory.history_length, 18, 18), env.available_actions)
+            model = QNeuralNetwork(chain, target_chain, device)
+
         explorer = LinearEpsilonGreedyExplorer(1, 0.1, 1000000)
         agent = PigChaseQLearnerAgent(name, env.available_actions,
                                       model, memory, 0.99, 32, 50000,
@@ -106,7 +114,7 @@ def agent_factory(name, role, clients, device, max_epochs, logdir, visualizer):
         viz_rewards = []
 
         max_training_steps = EPOCH_SIZE * max_epochs
-        for step in range(1, max_training_steps+1):
+        for step in six.moves.range(1, max_training_steps+1):
 
             # check if env needs reset
             if env.done:
@@ -159,6 +167,8 @@ def run_experiment(agents_def):
 
 if __name__ == '__main__':
     arg_parser = ArgumentParser('Pig Chase DQN experiment')
+    arg_parser.add_argument('-b', '--backend', type=str, choices=['cntk', 'chainer'],
+                           default='cntk', help='Neural network backend')
     arg_parser.add_argument('-e', '--epochs', type=int, default=5,
                             help='Number of epochs to run.')
     arg_parser.add_argument('clients', nargs='*',
@@ -177,8 +187,8 @@ if __name__ == '__main__':
         visualizer = ConsoleVisualizer()
 
     agents = [{'name': agent, 'role': role, 'clients': args.clients,
-               'device': args.device, 'max_epochs': args.epochs,
-               'logdir': logdir, 'visualizer': visualizer}
+               'backend':args.backend, 'device': args.device,
+               'max_epochs': args.epochs, 'logdir': logdir, 'visualizer': visualizer}
               for role, agent in enumerate(ENV_AGENT_NAMES)]
 
     run_experiment(agents)

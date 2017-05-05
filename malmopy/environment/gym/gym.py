@@ -48,7 +48,7 @@ class GymEnvironment(VideoCapableEnvironment):
 
         self._state_builder = state_builder
         self._env = gym.make(env_name)
-        self._env.frameskip = repeat_action
+        self._env.env.frameskip = repeat_action
         self._no_op = max(0, no_op)
         self._done = True
 
