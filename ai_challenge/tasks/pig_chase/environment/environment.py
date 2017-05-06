@@ -19,12 +19,11 @@ from __future__ import absolute_import
 
 import json
 import re
-
 import numpy as np
+
 from MalmoPython import MissionSpec
-
 from malmopy.environment.malmo import MalmoEnvironment, MalmoStateBuilder
-
+from ai_challenge.utils import get_mission_path
 
 ENV_AGENT_NAMES = ['Agent_1', 'Agent_2']
 ENV_TARGET_NAMES = ['Pig']
@@ -187,11 +186,12 @@ class PigChaseEnvironment(MalmoEnvironment):
                  state_builder,
                  actions=ENV_ACTIONS,
                  role=0, exp_name="",
-                 human_speed=False, randomize_positions=False):
+                 human_speed=False,
+                 randomize_positions=False):
 
         assert isinstance(state_builder, MalmoStateBuilder)
 
-        self._mission_xml = open('pig_chase.xml', 'r').read()
+        self._mission_xml = open(get_mission_path('pig_chase.xml'), 'r').read()
         # override tics per ms to play at human speed
         if human_speed:
             print('Setting mission to run at human speed')

@@ -19,9 +19,9 @@ import os
 import sys
 from time import sleep
 
-from ai_challenge.pig_chase.agents import PigChaseChallengeAgent
-from ai_challenge.pig_chase.environment import PigChaseEnvironment, PigChaseSymbolicStateBuilder
-from ai_challenge.utils import ENV_AGENT_NAMES
+from ai_challenge.tasks.pig_chase.agents import PigChaseChallengeAgent
+from ai_challenge.tasks.pig_chase.environment import PigChaseEnvironment, ENV_AGENT_NAMES, \
+    PigChaseSymbolicStateBuilder
 
 # Enforce path
 sys.path.insert(0, os.getcwd())

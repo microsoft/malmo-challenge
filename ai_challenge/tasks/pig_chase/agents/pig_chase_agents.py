@@ -25,9 +25,9 @@ import numpy as np
 from six.moves import range
 from tkinter import ttk, Canvas, W
 
-from ai_challenge.utils import Entity, ENV_TARGET_NAMES, ENV_ENTITIES, \
-    ENV_AGENT_NAMES, \
-    ENV_ACTIONS, ENV_CAUGHT_REWARD, ENV_BOARD_SHAPE
+from ai_challenge.tasks.pig_chase.environment import ENV_TARGET_NAMES, ENV_ENTITIES, \
+    ENV_AGENT_NAMES, ENV_ACTIONS, ENV_CAUGHT_REWARD, ENV_BOARD_SHAPE
+from ai_challenge.utils import Entity
 from malmopy.agent import AStarAgent
 from malmopy.agent import QLearnerAgent, BaseAgent, RandomAgent
 from malmopy.agent.gui import GuiAgent

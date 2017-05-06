@@ -3,11 +3,12 @@ from chainerrl import q_functions
 
 from ai_challenge.utils import train_value_based
 from ai_challenge.models import RecNNQFunc, NNQFunc
-from ai_challenge.tasks.pig_chase import PigChaseEnvironment, CustomStateBuilder
-from ai_challenge.tasks.pig_chase import PigChaseChallengeAgent
+from ai_challenge.tasks.pig_chase.environment import PigChaseEnvironment, CustomStateBuilder, \
+    PigChaseSymbolicStateBuilder
+from ai_challenge.tasks.pig_chase.agents import PigChaseChallengeAgent
 
 BUFFER_SIZE = 10 ** 6
-EPISODIC_BUFER_SIZE = 5 * 10 ** 3
+EPISODIC_BUFFER_SIZE = 5 * 10 ** 3
 SMALL_STEP_NUM = 10100
 MED_STEP_NUM = 100100
 LAR_STEP_NUM = 200100
@@ -15,7 +16,7 @@ EVAL_NO = 40
 EVAL_FREQ = 2000
 
 
-def dqn_experiment(clients):
+def dqn_exp(clients):
     model_cfg = {"gpu": -1,
                  "gamma": 1.,
                  "replay_start_size": 16,
@@ -38,8 +39,13 @@ def dqn_experiment(clients):
         NNQFunc(output_dim=3, input_dim=80, hidden_units=200))
 
     opponent = PigChaseChallengeAgent(name="Agent_1")
-    agent_env = PigChaseEnvironment(remotes=clients, state_builder=CustomStateBuilder)
-    opponent_env = PigChaseEnvironment(remotes=clients, state_builder=CustomStateBuilder)
+    agent_st_build = CustomStateBuilder()
+    opponent_st_build = PigChaseSymbolicStateBuilder()
+    opponent_env = PigChaseEnvironment(remotes=clients, state_builder=opponent_st_build, role=0,
+                                       randomize_positions=True)
+
+    agent_env = PigChaseEnvironment(remotes=clients, state_builder=agent_st_build, role=1,
+                                    randomize_positions=True)
 
     train_value_based(agent_env=agent_env,
                       opponent_env=opponent_env,
@@ -48,12 +54,12 @@ def dqn_experiment(clients):
                       actions_no=3,
                       experiment_config=experiment_cfg,
                       explorer_config=explorer_cfg,
-                      feature_map=None,
+                      feature_map=lambda x: x,
                       model_config=model_cfg,
                       model_type="DQN")
 
 
-def rec_dqn_experiment(clients):
+def rec_dqn_exp(clients):
     model_cfg = {"gpu": -1,
                  "gamma": 1.,
                  "replay_start_size": 16,
@@ -76,8 +82,13 @@ def rec_dqn_experiment(clients):
         RecNNQFunc(output_dim=3, input_dim=80, hidden_units=200, rec_dim=2))
 
     opponent = PigChaseChallengeAgent(name="Agent_1")
-    agent_env = PigChaseEnvironment(remotes=clients, state_builder=CustomStateBuilder)
-    opponent_env = PigChaseEnvironment(remotes=clients, state_builder=CustomStateBuilder)
+    agent_st_build = CustomStateBuilder()
+    opponent_st_build = PigChaseSymbolicStateBuilder()
+    opponent_env = PigChaseEnvironment(remotes=clients, state_builder=opponent_st_build, role=0,
+                                       randomize_positions=True)
+
+    agent_env = PigChaseEnvironment(remotes=clients, state_builder=agent_st_build, role=1,
+                                    randomize_positions=True)
 
     train_value_based(agent_env=agent_env,
                       opponent_env=opponent_env,
@@ -86,6 +97,6 @@ def rec_dqn_experiment(clients):
                       actions_no=3,
                       experiment_config=experiment_cfg,
                       explorer_config=explorer_cfg,
-                      feature_map=None,
+                      feature_map=lambda x: x,
                       model_config=model_cfg,
                       model_type="DQN")

@@ -15,8 +15,7 @@
 # SOFTWARE.
 # ===================================================================================================================
 
-from ai_challenge.pig_chase.environment import PigChaseTopDownStateBuilder
-from ai_challenge.utils import ENV_AGENT_NAMES
+from ai_challenge.tasks.pig_chase.environment import PigChaseTopDownStateBuilder, ENV_AGENT_NAMES
 from evaluation import PigChaseEvaluator
 from malmopy.agent import RandomAgent
 
@@ -26,7 +25,7 @@ if __name__ == '__main__':
     clients = [('127.0.0.1', 10000), ('127.0.0.1', 10001)]
     agent = RandomAgent(ENV_AGENT_NAMES[1], 3)
 
-    eval = PigChaseEvaluator(clients, agent, agent, PigChaseTopDownStateBuilder())
-    eval.run()
+    evaluation = PigChaseEvaluator(clients, agent, agent, PigChaseTopDownStateBuilder())
+    evaluation.run()
 
-    eval.save('My Exp 1', 'pig_chase_results.json')
+    evaluation.save('My Exp 1', 'pig_chase_results.json')

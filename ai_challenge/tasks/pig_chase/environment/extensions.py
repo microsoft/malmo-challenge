@@ -1,11 +1,13 @@
-import math
-
+import logging
 import numpy as np
 
-from ai_challenge.pig_chase.environment import PigChaseEnvironment
-from ai_challenge.utils import Entity, ENV_BOARD, ENV_ENTITIES, ENV_BOARD_SHAPE, \
-    ACTIONS_NUM, BOARD_SIZE, NAME_ENUM, ENT_NUM
+from ai_challenge.tasks.pig_chase.environment import PigChaseEnvironment, ENV_BOARD, ENV_ENTITIES, \
+    ENV_BOARD_SHAPE, ACTIONS_NUM, BOARD_SIZE, NAME_ENUM, ENT_NUM
+
+from ai_challenge.utils import Entity
 from malmopy.environment.malmo import MalmoStateBuilder
+
+logger = logging.getLogger(__name__)
 
 
 class CustomStateBuilder(MalmoStateBuilder):
@@ -53,9 +55,10 @@ class CustomStateBuilder(MalmoStateBuilder):
         ent_lst, pssd_stps, done = self.transform_incoming(obs, passed_steps, done)
         init_state = np.zeros((BOARD_SIZE, BOARD_SIZE, ENT_NUM), dtype=np.float32)
         trans_state = np.zeros((BOARD_SIZE, BOARD_SIZE, ENT_NUM), dtype=np.float32)
-        right_top_corner = [(i, j) for i in range(math.floor(BOARD_SIZE / 2.), BOARD_SIZE + 1) for j
-                            in
-                            range(math.floor(BOARD_SIZE / 2.), BOARD_SIZE + 1)]
+        right_top_corner = [(i, j) for i in
+                            range(np.floor(BOARD_SIZE / 2.).astype(np.int32), BOARD_SIZE + 1)
+                            for j in
+                            range(np.floor(BOARD_SIZE / 2.).astype(np.int32), BOARD_SIZE + 1)]
         for ent in ent_lst:
             init_state[ent.x, ent.z, NAME_ENUM[ent.name] - 1] = NAME_ENUM[ent.name]
 
@@ -106,7 +109,10 @@ class CustomStateBuilder(MalmoStateBuilder):
 
         world_obs = environment.world_observations
         if world_obs is None or ENV_BOARD not in world_obs:
-            return None
+            logger.log(msg='Received None observation', level=logging.WARNING)
+            # the function below will deal with it
+            transformed_state = self.rotated_board_map(world_obs, 0, False)
+            return transformed_state
 
         # Generate symbolic view
         board = np.array(world_obs[ENV_BOARD], dtype=object).reshape(
@@ -122,6 +128,12 @@ class CustomStateBuilder(MalmoStateBuilder):
         action_count = environment.action_count
         done = environment.done
 
-        transformed_state = self.rotated_board_map(obs_from_env, action_count, done)
+        try:
+            transformed_state = self.rotated_board_map(obs_from_env, action_count, done)
+        except Exception as e:
+            logger.log(msg=e, level=logging.ERROR)
+            logger.log(msg='Last received obs:', level=logging.DEBUG)
+            logger.log(msg=(obs_from_env, action_count, done), level=logging.DEBUG)
+            raise e
 
         return transformed_state

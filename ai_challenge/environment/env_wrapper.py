@@ -8,11 +8,11 @@ class EnvWrapper(object):
     def __init__(self, agent_env, opponent_env, opponent):
         self._opponent = opponent
         self._opponent_env = opponent_env
-        self._agent_env = agent_env
         opponent_thread = Thread(target=self._run_opponent)
         opponent_thread.demon = True
         opponent_thread.start()
         sleep(1)
+        self._agent_env = agent_env
 
     def _run_opponent(self):
 
@@ -34,12 +34,12 @@ class EnvWrapper(object):
     def step(self, action):
         obs, reward, done = self._agent_env.do(action)
         obs, reward, done = self.deal_with_missing_obs(obs, reward, done)
-        return obs, reward / EnvWrapper._reward_normalization, done, None
+        return obs, float(reward) / EnvWrapper._reward_normalization, done, None
 
     def reset(self):
         obs = self._agent_env.reset()
-        obs, reward, done = self.deal_with_missing_obs(obs, 0, False)
-        return obs, EnvWrapper._reward_normalization, done
+        obs, _, _ = self.deal_with_missing_obs(obs, 0, False)
+        return obs
 
     def deal_with_missing_obs(self, obs, reward, done):
         if obs is None:

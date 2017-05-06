@@ -26,7 +26,7 @@ class RecNNQFunc(chainer.Chain, RecurrentChainMixin):
             input_layer=links.Linear(input_dim, hidden_units, wscale=w_scale),
             mid_layer=links.Linear(hidden_units, hidden_units, wscale=w_scale),
             mid_rec_layer=links.LSTM(input_dim, rec_dim),
-            output_layer=links.Linear(hidden_units, output_dim, wscale=w_scale))
+            output_layer=links.Linear(rec_dim + hidden_units, output_dim, wscale=w_scale))
 
     def __call__(self, x, test=False):
         h = self.input_layer(x)
@@ -35,5 +35,4 @@ class RecNNQFunc(chainer.Chain, RecurrentChainMixin):
         h = self.mid_layer(h)
         h = fun.relu(h)
         h = self.output_layer(fun.concat((h, rec_h)))
-        h = self.output_layer(h)
         return h
