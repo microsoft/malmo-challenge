@@ -24,7 +24,7 @@ setup(
     version=VERSION,
 
     packages=[package for package in find_packages()
-              if package.startswith('malmopy')],
+              if package.startswith('malmopy') or package.startswith('ai_challenge')],
 
     url='https://github.com/Microsoft/malmo-challenge',
     license='MIT',

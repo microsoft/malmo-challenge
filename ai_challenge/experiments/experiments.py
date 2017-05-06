@@ -36,7 +36,7 @@ def dqn_exp(clients):
                       "max_episode_len": 25}
 
     q_func = q_functions.SingleModelStateQFunctionWithDiscreteAction(
-        NNQFunc(output_dim=3, input_dim=80, hidden_units=200))
+        NNQFunc(output_dim=3, input_dim=80, hidden_units=300))
 
     opponent = PigChaseChallengeAgent(name="Agent_1")
     agent_st_build = CustomStateBuilder()
