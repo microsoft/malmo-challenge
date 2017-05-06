@@ -19,6 +19,7 @@ from __future__ import division
 
 import sys
 import time
+import logging
 from collections import namedtuple
 
 import numpy as np
@@ -34,6 +35,8 @@ from malmopy.agent.gui import GuiAgent
 
 P_FOCUSED = .75
 CELL_WIDTH = 33
+
+logger = logging.getLogger(__name__)
 
 
 class PigChaseQLearnerAgent(QLearnerAgent):
@@ -67,6 +70,9 @@ class PigChaseChallengeAgent(BaseAgent):
     def act(self, new_state, reward, done, is_training=False):
         if done:
             self.current_agent = self._select_agent(P_FOCUSED)
+            logging.log(
+                msg='Challenge agent using: {}'.format(self.current_agent.__class__.__name__),
+                level=logging.DEBUG)
         return self.current_agent.act(new_state, reward, done, is_training)
 
     def save(self, out_dir):
@@ -105,7 +111,7 @@ class FocusedAgent(AStarAgent):
         me_details = [e for e in entities if e['name'] == self.name][0]
         yaw = int(me_details['yaw'])
         direction = ((((
-                       yaw - 45) % 360) // 90) - 1) % 4  # convert Minecraft yaw to 0=north, 1=east etc.
+                           yaw - 45) % 360) // 90) - 1) % 4  # convert Minecraft yaw to 0=north, 1=east etc.
         target = [(j, i) for i, v in enumerate(state) for j, k in enumerate(v) if self._target in k]
 
         # Get agent and target nodes
@@ -137,8 +143,10 @@ class FocusedAgent(AStarAgent):
         state_height = state.shape[0]
         dir_north, dir_east, dir_south, dir_west = range(4)
         neighbors = []
-        inc_x = lambda x, dir,  delta: x + delta if dir == dir_east else x - delta if dir == dir_west else x
-        inc_z = lambda z, dir, delta: z + delta if dir == dir_south else z - delta if dir == dir_north else z
+        inc_x = lambda x, dir, delta: x + delta if dir == dir_east \
+            else x - delta if dir == dir_west else x
+        inc_z = lambda z, dir, delta: z + delta if dir == dir_south \
+            else z - delta if dir == dir_north else z
         # add a neighbour for each potential action; prune out the disallowed states afterwards
         for action in FocusedAgent.ACTIONS:
             if action.startswith("turn"):

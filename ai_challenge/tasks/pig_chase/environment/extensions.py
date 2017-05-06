@@ -17,18 +17,19 @@ class CustomStateBuilder(MalmoStateBuilder):
     @staticmethod
     def transform_incoming(obs, passed_steps, done):
 
-        ent_data_lst = obs[1]
-        state_data = obs[0]
         ent_lst = []
 
-        if obs is None or len(ent_data_lst) < 3:
+        # obs stores board at first index and list of entities at second
+        if obs is None or len(obs[1]) < 3:
             ent_lst.append(Entity(name='Pig', x=0, y=0, z=0, yaw=0, pitch=0))
             ent_lst.append(Entity(name='Agent_1', x=0, y=0, z=0, yaw=0, pitch=0))
-            ent_lst.append(Entity(name='Agnet_2', x=0, y=0, z=0, yaw=0, pitch=0))
-            logger.log(msg='Received None or incomplete observation from Malmo:',
+            ent_lst.append(Entity(name='Agent_2', x=0, y=0, z=0, yaw=0, pitch=0))
+            logger.log(msg='Received None or incomplete observation from Malmo: {}'.format(obs),
                        level=logging.WARNING)
-            logger.log(msg=obs, level=logging.DEBUG)
-            return ent_lst
+            return ent_lst, passed_steps, done
+
+        ent_data_lst = obs[1]
+        state_data = obs[0]
 
         for ent_obs_data in ent_data_lst:
             x_pos, z_pos = [(j, i) for i, v in enumerate(state_data) for j, k in enumerate(v) if
@@ -134,8 +135,8 @@ class CustomStateBuilder(MalmoStateBuilder):
             transformed_state = self.rotated_board_map(obs_from_env, action_count, done)
         except Exception as e:
             logger.log(msg=e, level=logging.ERROR)
-            logger.log(msg='Error in state builder. Last received obs:', level=logging.DEBUG)
-            logger.log(msg=obs_from_env,level=logging.DEBUG)
+            logger.log(msg='Error in state builder. Last received obs: {}'.format(obs_from_env),
+                       level=logging.DEBUG)
             raise e
 
         return transformed_state

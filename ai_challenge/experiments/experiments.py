@@ -100,4 +100,5 @@ def rec_dqn_exp(clients):
                       explorer_config=explorer_cfg,
                       feature_map=lambda x: x,
                       model_config=model_cfg,
-                      model_type="DQN")
+                      model_type="DQN",
+                      reward_norm=ENV_CAUGHT_REWARD)
