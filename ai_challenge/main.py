@@ -6,7 +6,7 @@ from utils import parse_clients_args
 
 def main():
 
-    logging.basicConfig(filename='pig_chase.log', level=logging.DEBUG)
+    logging.basicConfig(filename='ai_challenge.log', level=logging.DEBUG)
     arg_parser = argparse.ArgumentParser()
     arg_parser.add_argument('clients', nargs='*',
                             default=['127.0.0.1:10000', '127.0.0.1:10001'],

@@ -15,7 +15,7 @@ EVAL_FREQ = 2000
 
 def train_value_based(opponent, q_function, agent_env, opponent_env,
                       model_config, explorer_config, experiment_config,
-                      actions_no, feature_map, model_type, grad_clip=10.):
+                      actions_no, feature_map, model_type, grad_clip=10., reward_norm=1.):
     opt = optimizers.Adam()
     opt.setup(q_function)
     opt.add_hook(optimizer.GradientClipping(grad_clip))
@@ -33,7 +33,8 @@ def train_value_based(opponent, q_function, agent_env, opponent_env,
                                         explorer=explorer,
                                         **model_config)
 
-    env = EnvWrapper(agent_env=agent_env, opponent_env=opponent_env, opponent=opponent)
+    env = EnvWrapper(agent_env=agent_env, opponent_env=opponent_env, opponent=opponent,
+                     reward_norm=reward_norm)
     experiments.train_agent_with_evaluation(agent=agent,
                                             env=env,
                                             **experiment_config)

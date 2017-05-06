@@ -3,11 +3,11 @@ from threading import Thread
 
 
 class EnvWrapper(object):
-    _reward_normalization = 25.
 
-    def __init__(self, agent_env, opponent_env, opponent):
+    def __init__(self, agent_env, opponent_env, opponent, reward_norm):
         self._opponent = opponent
         self._opponent_env = opponent_env
+        self._reward_norm = reward_norm
         opponent_thread = Thread(target=self._run_opponent)
         opponent_thread.demon = True
         opponent_thread.start()
@@ -34,7 +34,7 @@ class EnvWrapper(object):
     def step(self, action):
         obs, reward, done = self._agent_env.do(action)
         obs, reward, done = self.deal_with_missing_obs(obs, reward, done)
-        return obs, float(reward) / EnvWrapper._reward_normalization, done, None
+        return obs, float(reward) / self._reward_norm, done, None
 
     def reset(self):
         obs = self._agent_env.reset()

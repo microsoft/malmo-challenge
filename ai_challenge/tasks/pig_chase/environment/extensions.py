@@ -21,10 +21,13 @@ class CustomStateBuilder(MalmoStateBuilder):
         state_data = obs[0]
         ent_lst = []
 
-        if obs is None:
+        if obs is None or len(ent_data_lst) < 3:
             ent_lst.append(Entity(name='Pig', x=0, y=0, z=0, yaw=0, pitch=0))
             ent_lst.append(Entity(name='Agent_1', x=0, y=0, z=0, yaw=0, pitch=0))
             ent_lst.append(Entity(name='Agnet_2', x=0, y=0, z=0, yaw=0, pitch=0))
+            logger.log(msg='Received None or incomplete observation from Malmo:',
+                       level=logging.WARNING)
+            logger.log(msg=obs, level=logging.DEBUG)
             return ent_lst
 
         for ent_obs_data in ent_data_lst:
@@ -109,7 +112,6 @@ class CustomStateBuilder(MalmoStateBuilder):
 
         world_obs = environment.world_observations
         if world_obs is None or ENV_BOARD not in world_obs:
-            logger.log(msg='Received None observation', level=logging.WARNING)
             # the function below will deal with it
             transformed_state = self.rotated_board_map(world_obs, 0, False)
             return transformed_state
@@ -132,8 +134,8 @@ class CustomStateBuilder(MalmoStateBuilder):
             transformed_state = self.rotated_board_map(obs_from_env, action_count, done)
         except Exception as e:
             logger.log(msg=e, level=logging.ERROR)
-            logger.log(msg='Last received obs:', level=logging.DEBUG)
-            logger.log(msg=(obs_from_env, action_count, done), level=logging.DEBUG)
+            logger.log(msg='Error in state builder. Last received obs:', level=logging.DEBUG)
+            logger.log(msg=obs_from_env,level=logging.DEBUG)
             raise e
 
         return transformed_state

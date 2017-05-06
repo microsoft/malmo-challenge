@@ -14,9 +14,7 @@
 #  TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 # ===================================================================================================================
-
-FROM nvidia/cuda:8.0-cudnn5-devel-ubuntu16.04
-
+FROM ubuntu
 
 # Version variables
 ENV MALMO_VERSION 0.21.0
@@ -44,6 +42,9 @@ RUN apt-get update -y && \
     wget \
     unzip && \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
+
+RUN wget -P /tmp https://github.com/NVIDIA/nvidia-docker/releases/download/v1.0.1/nvidia-docker_1.0.1-1_amd64.deb
+RUN dpkg -i /tmp/nvidia-docker*.deb && rm /tmp/nvidia-docker*.deb
 
 RUN pip install -U pip setuptools && pip install wheel && pip install chainer==1.21.0
 

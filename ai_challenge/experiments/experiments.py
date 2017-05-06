@@ -4,7 +4,7 @@ from chainerrl import q_functions
 from ai_challenge.utils import train_value_based
 from ai_challenge.models import RecNNQFunc, NNQFunc
 from ai_challenge.tasks.pig_chase.environment import PigChaseEnvironment, CustomStateBuilder, \
-    PigChaseSymbolicStateBuilder
+    PigChaseSymbolicStateBuilder, ENV_CAUGHT_REWARD
 from ai_challenge.tasks.pig_chase.agents import PigChaseChallengeAgent
 
 BUFFER_SIZE = 10 ** 6
@@ -56,7 +56,8 @@ def dqn_exp(clients):
                       explorer_config=explorer_cfg,
                       feature_map=lambda x: x,
                       model_config=model_cfg,
-                      model_type="DQN")
+                      model_type="DQN",
+                      reward_norm=ENV_CAUGHT_REWARD)
 
 
 def rec_dqn_exp(clients):
