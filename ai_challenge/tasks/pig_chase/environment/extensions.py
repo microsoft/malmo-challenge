@@ -1,70 +1,11 @@
-from time import sleep
-from threading import Thread
 import math
+
 import numpy as np
 
-from malmopy.environment.malmo import MalmoStateBuilder
-
-from ai_challenge.pig_chase.utils import Entity, ENV_BOARD, ENV_ENTITIES, ENV_BOARD_SHAPE, \
-    ACTIONS_NUM, BOARD_SIZE, NAME_ENUM, ENT_NUM, ENV_CAUGHT_REWARD
 from ai_challenge.pig_chase.environment import PigChaseEnvironment
-
-
-class EnvWrapper(object):
-    class ExtObs(object):
-        def __init__(self, obs, passed_steps, done):
-            self.obs = obs
-            self.passed_steps = passed_steps
-            self.done = done
-
-    _reward_normalization = 25.
-
-    def __init__(self, agent_env, opponent_env, opponent):
-        self._opponent = opponent
-        self._opponent_env = opponent_env
-        self._agent_env = agent_env
-        opponent_thread = Thread(target=self._run_opponent)
-        opponent_thread.demon = True
-        opponent_thread.start()
-        sleep(1)
-
-    def _run_opponent(self):
-
-        obs = self._opponent_env.reset()
-        reward = 0
-        done = False
-
-        while True:
-            # select an action
-            action = self._opponent.act(obs, reward, done, is_training=True)
-
-            # reset if needed
-            if self._opponent_env.done:
-                self._opponent_env.reset()
-
-            # take a step
-            obs, reward, agent_done = self._opponent_env.do(action)
-
-    def step(self, action):
-        obs, reward, done = self._agent_env.do(action)
-        obs, reward, done = self.deal_with_missing_obs(obs, reward, done)
-        return obs, reward / EnvWrapper._reward_normalization, done, None
-
-    def reset(self):
-        obs = self._agent_env.reset()
-        obs, reward, done = self.deal_with_missing_obs(obs, 0, False)
-        return obs, float(reward) / ENV_CAUGHT_REWARD, done
-
-    def deal_with_missing_obs(self, obs, reward, done):
-        if obs is None:
-            obs = self._agent_env.reset()
-            reward = 0
-            done = False
-        return obs, reward, done
-
-    def close(self):
-        self._agent_env._agent.sendCommand("quit")
-        self._opponent_env._agent.sendCommand("quit")
+from ai_challenge.utils import Entity, ENV_BOARD, ENV_ENTITIES, ENV_BOARD_SHAPE, \
+    ACTIONS_NUM, BOARD_SIZE, NAME_ENUM, ENT_NUM
+from malmopy.environment.malmo import MalmoStateBuilder
 
 
 class CustomStateBuilder(MalmoStateBuilder):

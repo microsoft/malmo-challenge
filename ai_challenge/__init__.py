@@ -1,1 +1,1 @@
-import pig_chase
+from .tasks import *

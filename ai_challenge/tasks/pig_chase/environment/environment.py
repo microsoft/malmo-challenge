@@ -21,12 +21,24 @@ import json
 import re
 
 import numpy as np
-
-from ai_challenge.pig_chase.utils import Entity, ENV_ACTIONS, ENV_BOARD, ENV_ENTITIES, \
-    ENV_BOARD_SHAPE, ENV_AGENT_NAMES
-
 from MalmoPython import MissionSpec
+
 from malmopy.environment.malmo import MalmoEnvironment, MalmoStateBuilder
+
+
+ENV_AGENT_NAMES = ['Agent_1', 'Agent_2']
+ENV_TARGET_NAMES = ['Pig']
+ENV_ENTITIES_NAME = ENV_AGENT_NAMES + ENV_TARGET_NAMES
+ENV_ACTIONS = ["move 1", "turn -1", "turn 1"]
+ENV_ENTITIES = 'entities'
+ENV_BOARD = 'board'
+ENV_BOARD_SHAPE = (9, 9)
+ENV_INDIVIDUAL_REWARD = 5
+ENV_CAUGHT_REWARD = 25
+ACTIONS_NUM = 25.
+BOARD_SIZE = 5
+ENT_NUM = len(ENV_AGENT_NAMES) + len(ENV_TARGET_NAMES)
+NAME_ENUM = {'Pig': 1, 'Agent_1': 2, 'Agent_2': 3}
 
 
 class PigChaseSymbolicStateBuilder(MalmoStateBuilder):

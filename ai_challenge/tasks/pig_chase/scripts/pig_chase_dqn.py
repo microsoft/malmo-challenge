@@ -26,11 +26,11 @@ from time import sleep
 import six
 
 from ai_challenge.pig_chase.agents import PigChaseChallengeAgent, PigChaseQLearnerAgent
-from ai_challenge.pig_chase.environment import PigChaseEnvironment, PigChaseSymbolicStateBuilder, \
-    PigChaseTopDownStateBuilder
-from ai_challenge.pig_chase.utils.common import parse_clients_args, visualize_training, ENV_AGENT_NAMES
-from malmopy.agent import LinearEpsilonGreedyExplorer, RandomAgent
-from malmopy.agent import TemporalMemory
+from ai_challenge.pig_chase.environment import PigChaseEnvironment, PigChaseSymbolicStateBuilder
+from ai_challenge.utils import parse_clients_args, visualize_training, ENV_AGENT_NAMES
+from malmopy.agent import LinearEpsilonGreedyExplorer
+from malmopy.agent import TemporalMemory, RandomAgent
+from malmopy.environment.malmo import MalmoALEStateBuilder
 
 try:
     from malmopy.visualization.tensorboard import TensorboardVisualizer
@@ -47,7 +47,8 @@ DQN_FOLDER = 'results/baselines/%s/dqn/%s-%s'
 EPOCH_SIZE = 100000
 
 
-def agent_factory(name, role, clients, backend, device, max_epochs, logdir, visualizer):
+def agent_factory(name, role, clients, backend,
+                  device, max_epochs, logdir, visualizer):
 
     assert len(clients) >= 2, 'Not enough clients (need at least 2)'
     clients = parse_clients_args(clients)
@@ -57,7 +58,6 @@ def agent_factory(name, role, clients, backend, device, max_epochs, logdir, visu
         builder = PigChaseSymbolicStateBuilder()
         env = PigChaseEnvironment(clients, builder, role=role,
                                   randomize_positions=True)
-
         agent = PigChaseChallengeAgent(name)
         if type(agent.current_agent) == RandomAgent:
             agent_type = PigChaseEnvironment.AGENT_TYPE_1
@@ -88,17 +88,17 @@ def agent_factory(name, role, clients, backend, device, max_epochs, logdir, visu
             obs, reward, agent_done = env.do(action)
 
     else:
-        env = PigChaseEnvironment(clients, PigChaseTopDownStateBuilder(True),
+        env = PigChaseEnvironment(clients, MalmoALEStateBuilder(),
                                   role=role, randomize_positions=True)
-        memory = TemporalMemory(100000, (18, 18))
+        memory = TemporalMemory(100000, (84, 84))
 
         if backend == 'cntk':
             from malmopy.model.cntk import QNeuralNetwork
-            model = QNeuralNetwork((memory.history_length, 18, 18), env.available_actions, device)
+            model = QNeuralNetwork((memory.history_length, 84, 84), env.available_actions, device)
         else:
-            from malmopy.model.chainer import QNeuralNetwork, ReducedDQNChain
-            chain = ReducedDQNChain((memory.history_length, 18, 18), env.available_actions)
-            target_chain = ReducedDQNChain((memory.history_length, 18, 18), env.available_actions)
+            from malmopy.model.chainer import QNeuralNetwork, DQNChain
+            chain = DQNChain((memory.history_length, 84, 84), env.available_actions)
+            target_chain = DQNChain((memory.history_length, 84, 84), env.available_actions)
             model = QNeuralNetwork(chain, target_chain, device)
 
         explorer = LinearEpsilonGreedyExplorer(1, 0.1, 1000000)
@@ -166,7 +166,7 @@ def run_experiment(agents_def):
 if __name__ == '__main__':
     arg_parser = ArgumentParser('Pig Chase DQN experiment')
     arg_parser.add_argument('-b', '--backend', type=str, choices=['cntk', 'chainer'],
-                           default='cntk', help='Neural network backend')
+                            default='cntk', help='Neural network backend')
     arg_parser.add_argument('-e', '--epochs', type=int, default=5,
                             help='Number of epochs to run.')
     arg_parser.add_argument('clients', nargs='*',
@@ -185,7 +185,7 @@ if __name__ == '__main__':
         visualizer = ConsoleVisualizer()
 
     agents = [{'name': agent, 'role': role, 'clients': args.clients,
-               'backend':args.backend, 'device': args.device,
+               'backend': args.backend, 'device': args.device,
                'max_epochs': args.epochs, 'logdir': logdir, 'visualizer': visualizer}
               for role, agent in enumerate(ENV_AGENT_NAMES)]
 

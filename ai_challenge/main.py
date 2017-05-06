@@ -1,5 +1,6 @@
 import argparse
-import ai_challenge.pig_chase.experiments as experiments
+
+import ai_challenge.experiments as experiments
 
 
 def main():

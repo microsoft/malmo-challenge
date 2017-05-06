@@ -15,20 +15,6 @@
 # SOFTWARE.
 # ===================================================================================================================
 
-ENV_AGENT_NAMES = ['Agent_1', 'Agent_2']
-ENV_TARGET_NAMES = ['Pig']
-ENV_ENTITIES_NAME = ENV_AGENT_NAMES + ENV_TARGET_NAMES
-ENV_ACTIONS = ["move 1", "turn -1", "turn 1"]
-ENV_ENTITIES = 'entities'
-ENV_BOARD = 'board'
-ENV_BOARD_SHAPE = (9, 9)
-ENV_INDIVIDUAL_REWARD = 5
-ENV_CAUGHT_REWARD = 25
-ACTIONS_NUM = 25.
-BOARD_SIZE = 5
-ENT_NUM = len(ENV_AGENT_NAMES) + len(ENV_TARGET_NAMES)
-NAME_ENUM = {'Pig': 1, 'Agent_1': 2, 'Agent_2': 3}
-
 
 def parse_clients_args(args_clients):
     """
@@ -39,11 +25,13 @@ def parse_clients_args(args_clients):
     return [str.split(str(client), ':') for client in args_clients]
 
 
-def visualize_training(visualizer, step, rewards, tag='Training'):
+def visualize_training(visualizer, step, rewards=(), tag='Training', **kwargs):
     visualizer.add_entry(step, '%s/reward per episode' % tag, sum(rewards))
     visualizer.add_entry(step, '%s/max.reward' % tag, max(rewards))
     visualizer.add_entry(step, '%s/min.reward' % tag, min(rewards))
     visualizer.add_entry(step, '%s/actions per episode' % tag, len(rewards) - 1)
+    for name, value in kwargs.items():
+        visualizer.add_entry(step, '%s/'+name % tag, value)
 
 
 class Entity(object):

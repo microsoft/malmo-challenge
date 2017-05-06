@@ -15,8 +15,8 @@
 # SOFTWARE.
 # ===================================================================================================================
 
-from ai_challenge.pig_chase.utils.common import ENV_AGENT_NAMES
 from ai_challenge.pig_chase.environment import PigChaseTopDownStateBuilder
+from ai_challenge.utils import ENV_AGENT_NAMES
 from evaluation import PigChaseEvaluator
 from malmopy.agent import RandomAgent
 

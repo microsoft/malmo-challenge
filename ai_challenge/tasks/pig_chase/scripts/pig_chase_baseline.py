@@ -33,7 +33,7 @@ except ImportError:
     print('Cannot import tensorboard, using ConsoleVisualizer.')
     from malmopy.visualization import ConsoleVisualizer
 
-from ai_challenge.pig_chase.utils.common import parse_clients_args, visualize_training, ENV_AGENT_NAMES, ENV_TARGET_NAMES
+from ai_challenge.utils import parse_clients_args, visualize_training, ENV_AGENT_NAMES, ENV_TARGET_NAMES
 from ai_challenge.pig_chase.agents import PigChaseChallengeAgent, FocusedAgent
 from ai_challenge.pig_chase.environment import PigChaseEnvironment, PigChaseSymbolicStateBuilder
 
