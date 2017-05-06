@@ -34,7 +34,7 @@ except ImportError:
     from malmopy.visualization import ConsoleVisualizer
 
 from ai_challenge.pig_chase.utils.common import parse_clients_args, visualize_training, ENV_AGENT_NAMES, ENV_TARGET_NAMES
-from ai_challenge.pig_chase.agents.basic_agents import PigChaseChallengeAgent, FocusedAgent
+from ai_challenge.pig_chase.agents import PigChaseChallengeAgent, FocusedAgent
 from ai_challenge.pig_chase.environment import PigChaseEnvironment, PigChaseSymbolicStateBuilder
 
 # Enforce path

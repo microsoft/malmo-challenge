@@ -22,7 +22,7 @@ import re
 
 import numpy as np
 
-from common import Entity, ENV_ACTIONS, ENV_BOARD, ENV_ENTITIES, \
+from ai_challenge.pig_chase.utils import Entity, ENV_ACTIONS, ENV_BOARD, ENV_ENTITIES, \
     ENV_BOARD_SHAPE, ENV_AGENT_NAMES
 
 from MalmoPython import MissionSpec

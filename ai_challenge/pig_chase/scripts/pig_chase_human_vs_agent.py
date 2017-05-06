@@ -32,7 +32,7 @@ sys.path.insert(0, os.getcwd())
 sys.path.insert(1, os.path.join(os.path.pardir, os.getcwd()))
 
 from ai_challenge.pig_chase.utils.common import parse_clients_args, ENV_AGENT_NAMES, ENV_ACTIONS
-from ai_challenge.pig_chase.agents.basic_agents import PigChaseChallengeAgent, PigChaseHumanAgent
+from ai_challenge.pig_chase.agents import PigChaseChallengeAgent, PigChaseHumanAgent
 from ai_challenge.pig_chase.environment import PigChaseEnvironment, PigChaseSymbolicStateBuilder
 
 EXPERIMENT_NAME = 'Pig_Chase_2xAStar'

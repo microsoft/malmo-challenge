@@ -25,10 +25,10 @@ from time import sleep
 
 import six
 
-from ai_challenge.pig_chase.agents.basic_agents import PigChaseChallengeAgent, PigChaseQLearnerAgent
-from ai_challenge.pig_chase.utils.common import parse_clients_args, visualize_training, ENV_AGENT_NAMES
+from ai_challenge.pig_chase.agents import PigChaseChallengeAgent, PigChaseQLearnerAgent
 from ai_challenge.pig_chase.environment import PigChaseEnvironment, PigChaseSymbolicStateBuilder, \
     PigChaseTopDownStateBuilder
+from ai_challenge.pig_chase.utils.common import parse_clients_args, visualize_training, ENV_AGENT_NAMES
 from malmopy.agent import LinearEpsilonGreedyExplorer, RandomAgent
 from malmopy.agent import TemporalMemory
 
