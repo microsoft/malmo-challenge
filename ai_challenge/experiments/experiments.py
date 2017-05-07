@@ -7,7 +7,7 @@ from chainer import optimizers, optimizer
 from chainerrl import agents, replay_buffer, explorers, q_functions
 from chainerrl import q_functions, experiments
 
-from ai_challenge.environment import EnvWrapper
+from ai_challenge.environment import SingleEnvWrapper
 from ai_challenge.models import RecNNQFunc, NNQFunc
 from ai_challenge.tasks.pig_chase.environment import PigChaseEnvironment, CustomStateBuilder, \
     PigChaseSymbolicStateBuilder, ENV_CAUGHT_REWARD
@@ -29,7 +29,7 @@ PIG_ACTIONS_NUM = 3
 logger = logging.getLogger(__name__)
 
 
-def create_learner(model_type='DQN'):
+def create_value_based_learner(model_type):
     model_cfg = {"gpu": -1,
                  "gamma": 1.,
                  "replay_start_size": 16,
@@ -45,8 +45,8 @@ def create_learner(model_type='DQN'):
     grad_clip = 5.
 
     q_func = q_functions.SingleModelStateQFunctionWithDiscreteAction(
-        RecNNQFunc(output_dim=PIG_ACTIONS_NUM, input_dim=PIG_STATE_DIM, hidden_units=200,
-                   rec_dim=2))
+        RecNNQFunc(output_dim=PIG_ACTIONS_NUM, input_dim=PIG_STATE_DIM, hidden_units=250,
+                   rec_dim=5))
 
     opt = optimizers.Adam()
     opt.setup(q_func)
@@ -66,15 +66,22 @@ def create_learner(model_type='DQN'):
                                           **model_cfg)
 
     logger.log(msg='Created learner {}'.format(learner.__class__.__name__), level=logging.INFO)
+    logger.log(msg='Model parameters {}'.format(
+        ' '.join([name + ':' + str(value) for name, value in model_cfg.items()])),
+        level=logging.INFO)
+    logger.log(msg='Explorer parameters {}'.format(
+        ' '.join([name + ':' + str(value) for name, value in explorer_cfg.items()])),
+        level=logging.INFO)
 
     return learner
 
 
-def rec_dqn_exp(clients):
+def rec_value_based_exp(clients, model_type):
     experiment_cfg = {"steps": LAR_STEP_NUM,
                       "eval_n_runs": EVAL_NO,
                       "eval_frequency": EVAL_FREQ,
-                      "outdir": os.path.join(get_results_path(), 'rec_dqn_exp',
+                      "outdir": os.path.join(get_results_path(),
+                                             'rec_value_based_' + model_type,
                                              datetime.utcnow().isoformat()),
                       "max_episode_len": MAX_EPI_LEN}
 
@@ -91,14 +98,18 @@ def rec_dqn_exp(clients):
                                     role=1,
                                     randomize_positions=True)
 
-    env = EnvWrapper(agent_env=agent_env,
-                     opponent_env=opponent_env,
-                     opponent=opponent,
-                     reward_norm=ENV_CAUGHT_REWARD)
+    env = SingleEnvWrapper(agent_env=agent_env,
+                           opponent_env=opponent_env,
+                           opponent=opponent,
+                           reward_norm=ENV_CAUGHT_REWARD)
 
-    learner = create_learner("DQN")
+    learner = create_value_based_learner(model_type)
 
-    logger.log(msg='Starting experiment, now chainerrl will carry out logging.',
+    logger.log(msg='Experiment parameters {}'.format(
+        ' '.join([name + ':' + str(value) for name, value in experiment_cfg.items()])),
+        level=logging.INFO)
+
+    logger.log(msg='Starting experiment, calling chainerrl function.',
                level=logging.INFO)
 
     experiments.train_agent_with_evaluation(agent=learner,

@@ -14,12 +14,15 @@ def main():
                             help='Minecraft clients endpoints (ip(:port)?)+')
     arg_parser.add_argument('--exp', '-e', required=True,
                             help='Name of the experiment from experiments package')
+    arg_parser.add_argument('--model', '-m', required=True,
+                            help='Name of the model from chainerrl')
     args = arg_parser.parse_args()
     clients = parse_clients_args(args.clients)
     # run selected experiment with passed clients
-    logging.log(msg='Starting exp {} with clients {}.'.format(args.exp, args.clients),
-                level=logging.INFO)
-    getattr(experiments, args.exp)(clients)
+    logging.log(
+        msg='Starting exp {} with model {} and with clients {}.'
+            .format(args.exp, args.model,args.clients), level=logging.INFO)
+    getattr(experiments, args.exp)(clients, args.model)
     logging.log(msg='Exiting main.', level=logging.INFO)
 
 

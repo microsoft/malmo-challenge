@@ -16,7 +16,7 @@ class NNQFunc(chainer.Chain):
             output_layer=links.Linear(hidden_units, output_dim, wscale=w_scale))
 
         self.h2 = None
-        logger.log(msg='Initialized network {}'.format(self.__class__.__name__),
+        logger.log(msg='Initialized network {}.'.format(self.__class__.__name__),
                    level=logging.INFO)
 
     def __call__(self, x, test=False):
@@ -38,7 +38,10 @@ class RecNNQFunc(chainer.Chain, RecurrentChainMixin):
 
         self.rec_h1 = None
         self.h2 = None
-        logger.log(msg='Initialized network {}'.format(self.__class__.__name__),
+        self.h3 = None
+        self.lstm_c = self['mid_rec_layer'].c
+        self.lstm_h = self['mid_rec_layer'].h
+        logger.log(msg='Initialized network {}.'.format(self.__class__.__name__),
                    level=logging.INFO)
 
     def __call__(self, x, test=False):

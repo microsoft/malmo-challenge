@@ -114,7 +114,7 @@ def run_challenge_agent(clients):
 
 
 def agent_loop(agent, env, metrics_acc):
-    EVAL_EPISODES = 2
+    EVAL_EPISODES = 100.
     agent_done = False
     reward = 0
     episode = 0

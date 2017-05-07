@@ -8,4 +8,4 @@ cd ../..
 docker build . -t my_exp
 cd docker/my_dockerfiles
 docker-compose down
-docker-compose up -d
+docker-compose up

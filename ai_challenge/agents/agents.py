@@ -13,7 +13,8 @@ class LearningAgent(BaseAgent):
     def __init__(self, name, nb_actions, learner, out_dir, internal_to_store=None,
                  store_internal_freq=1):
 
-        assert nb_actions > 0, 'Agent should at least have 1 action (got %d)' % nb_actions
+        if not nb_actions > 0:
+            raise ValueError('Agent should at least have 1 action (got {})'.format(nb_actions))
 
         self.name = name
         self.nb_actions = nb_actions
@@ -61,7 +62,7 @@ class LearningAgent(BaseAgent):
     def load(self, out_dir):
         self.learner.load(out_dir)
 
-    def save_stored(self, path):
+    def save_stored_stats(self, path):
         self._visualizer.close()
         with open(path, 'wb') as handle:
             pickle.dump(self._storage_dict, handle)

@@ -30,23 +30,13 @@ from ai_challenge.tasks.pig_chase.environment import ENV_TARGET_NAMES, ENV_ENTIT
     ENV_AGENT_NAMES, ENV_ACTIONS, ENV_CAUGHT_REWARD, ENV_BOARD_SHAPE
 from ai_challenge.utils import Entity
 from malmopy.agent import AStarAgent
-from malmopy.agent import QLearnerAgent, BaseAgent, RandomAgent
+from malmopy.agent import BaseAgent, RandomAgent
 from malmopy.agent.gui import GuiAgent
 
 P_FOCUSED = .75
 CELL_WIDTH = 33
 
 logger = logging.getLogger(__name__)
-
-
-class PigChaseQLearnerAgent(QLearnerAgent):
-    """A thin wrapper around QLearnerAgent that normalizes rewards to [-1,1]"""
-
-    def act(self, state, reward, done, is_training=False):
-        reward /= ENV_CAUGHT_REWARD
-        return super(PigChaseQLearnerAgent, self).act(state, reward, done,
-                                                      is_training)
-
 
 class PigChaseChallengeAgent(BaseAgent):
     """Pig Chase challenge agent - behaves focused or random."""
