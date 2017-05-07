@@ -15,6 +15,8 @@
 # SOFTWARE.
 # ===================================================================================================================
 
+import numpy as np
+
 
 def parse_clients_args(args_clients):
     """
@@ -25,13 +27,14 @@ def parse_clients_args(args_clients):
     return [str.split(str(client), ':') for client in args_clients]
 
 
-def visualize_training(visualizer, step, rewards=(), tag='Training', **kwargs):
-    visualizer.add_entry(step, '%s/reward per episode' % tag, sum(rewards))
-    visualizer.add_entry(step, '%s/max.reward' % tag, max(rewards))
-    visualizer.add_entry(step, '%s/min.reward' % tag, min(rewards))
-    visualizer.add_entry(step, '%s/actions per episode' % tag, len(rewards) - 1)
+def visualize_training(visualizer, step, rewards=None, tag='Training', **kwargs):
+    if rewards is not None:
+        visualizer.add_entry(step, '%s/reward per episode' % tag, sum(rewards))
+        visualizer.add_entry(step, '%s/max.reward' % tag, max(rewards))
+        visualizer.add_entry(step, '%s/min.reward' % tag, min(rewards))
+        visualizer.add_entry(step, '%s/actions per episode' % tag, len(rewards) - 1)
     for name, value in kwargs.items():
-        visualizer.add_entry(step, '%s/'+name % tag, value)
+        visualizer.add_entry(step, '{}/'.format(tag) + name, np.array2string(value))
 
 
 class Entity(object):

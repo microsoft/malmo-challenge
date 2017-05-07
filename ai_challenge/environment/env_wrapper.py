@@ -10,20 +10,21 @@ class EnvWrapper(object):
         self._opponent = opponent
         self._opponent_env = opponent_env
         self._reward_norm = reward_norm
+        self._agent_env = agent_env
         opponent_thread = Thread(target=self._run_opponent)
-        opponent_thread.demon = True
+        opponent_thread.daemon = True
         opponent_thread.start()
         sleep(1)
-        self._agent_env = agent_env
+        logger.log(msg='Initialized {}'.format(self.__class__.__name__), level=logging.INFO)
 
     def _run_opponent(self):
 
         obs = self._opponent_env.reset()
         reward = 0
         done = False
+        logger.log(msg='Starting opponent thread', level=logging.INFO)
 
         while True:
-
             if self._opponent_env.done:
                 logger.log(msg='Opponent resetting env', level=logging.DEBUG)
                 self._opponent_env.reset()

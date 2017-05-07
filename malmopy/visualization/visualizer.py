@@ -18,7 +18,7 @@
 from __future__ import absolute_import
 
 from os import path
-
+from collections import defaultdict
 
 class Visualizable(object):
     def __init__(self, visualizer=None):
@@ -81,7 +81,7 @@ class CsvVisualizer(BaseVisualizer):
 
         super(CsvVisualizer, self).__init__()
         self._file = output_file
-        self._data = {}
+        self._data = defaultdict(dict)
 
     def add_entry(self, index, key, result, **kwargs):
         if key in self._data[index]:
