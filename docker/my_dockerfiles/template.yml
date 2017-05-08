@@ -11,7 +11,7 @@ services:
   agents:
       image: my_exp:latest
       working_dir: /root/malmo-challenge/ai_challenge
-      command: bash -c "python main.py malmo1:10000 malmo2:10000 -e rec_value_based_exp -m DQN  && python main.py malmo1:10000 malmo2:10000 -e rec_value_based_exp -m DQN"
+      command: bash -c "python main.py malmo1:10000 malmo2:10000 -e rec_value_based_exp -m DQN"
       ports:
         - "6006:6006"
       links:

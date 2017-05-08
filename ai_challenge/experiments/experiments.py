@@ -45,8 +45,8 @@ def create_value_based_learner(model_type):
     grad_clip = 5.
 
     q_func = q_functions.SingleModelStateQFunctionWithDiscreteAction(
-        RecNNQFunc(output_dim=PIG_ACTIONS_NUM, input_dim=PIG_STATE_DIM, hidden_units=250,
-                   rec_dim=5))
+        RecNNQFunc(output_dim=PIG_ACTIONS_NUM, input_dim=PIG_STATE_DIM, hidden_units=200,
+                   rec_dim=2))
 
     opt = optimizers.Adam()
     opt.setup(q_func)
@@ -58,12 +58,17 @@ def create_value_based_learner(model_type):
         random_action_func=lambda: np.random.random_integers(0, PIG_ACTIONS_NUM - 1),
         **explorer_cfg)
 
-    learner = getattr(agents, model_type)(q_function=q_func,
-                                          optimizer=opt,
-                                          replay_buffer=rep_buf,
-                                          phi=lambda x: x,
-                                          explorer=explorer,
-                                          **model_cfg)
+    try:
+        learner = getattr(agents, model_type)(q_function=q_func,
+                                              optimizer=opt,
+                                              replay_buffer=rep_buf,
+                                              phi=lambda x: x,
+                                              explorer=explorer,
+                                              **model_cfg)
+    except AttributeError as e:
+        logger.log(msg='Cannot find model {} in chainerrl.agents'.format(model_type),
+                   level=logging.ERROR)
+        raise e
 
     logger.log(msg='Created learner {}'.format(learner.__class__.__name__), level=logging.INFO)
     logger.log(msg='Model parameters {}'.format(

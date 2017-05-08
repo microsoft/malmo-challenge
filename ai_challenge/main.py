@@ -21,8 +21,14 @@ def main():
     # run selected experiment with passed clients
     logging.log(
         msg='Starting exp {} with model {} and with clients {}.'
-            .format(args.exp, args.model,args.clients), level=logging.INFO)
-    getattr(experiments, args.exp)(clients, args.model)
+            .format(args.exp, args.model, args.clients), level=logging.INFO)
+    try:
+        getattr(experiments, args.exp)(clients, args.model)
+    except AttributeError as e:
+        logging.log(msg='Cannot find experiment {} in experiments package.'.format(args.exp),
+                    level=logging.ERROR)
+        raise e
+
     logging.log(msg='Exiting main.', level=logging.INFO)
 
 
