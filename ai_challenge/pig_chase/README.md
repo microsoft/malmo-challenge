@@ -93,6 +93,10 @@ eval.run()
 eval.save('My experiment 1', 'path/to/save.json')
 ```
 
+## Compare against other teams:
+
+Submit your evaluation results on the [leaderboard website](https://malmo-leaderboard.azurewebsites.net/) to compare your results against the other participants.
+
 
 ## Next steps
 
