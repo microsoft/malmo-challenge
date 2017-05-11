@@ -30,7 +30,7 @@ We will consider the version of the code on branch master at the time of the sub
 
 - [Next steps](#next-steps)
   - [Run an experiment in Docker on Azure](#run-an-experiment-in-docker-on-azure)
-  - [Compare your results again other teams](#compare-against-other-teams)
+  - [Compare your results again other teams](#compare-your-results-against-other-teams)
   - [Resources](#resources)
 
 # Installation
