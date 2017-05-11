@@ -30,6 +30,7 @@ We will consider the version of the code on branch master at the time of the sub
 
 - [Next steps](#next-steps)
   - [Run an experiment in Docker on Azure](#run-an-experiment-in-docker-on-azure)
+  - [Compare your results again other teams](#compare-against-other-teams)
   - [Resources](#resources)
 
 # Installation
@@ -93,6 +94,10 @@ See how to [run your first baseline experiment](ai_challenge/pig_chase/README.md
 
 Docker is a virtualization platform that makes it easy to deploy software with all its dependencies. 
 We use docker to run experiments locally or in the cloud. Details on how to run an example experiment using docker are in the [docker README](docker/README.md).
+
+## Compare your results against other teams:
+
+We provide you a [leaderboard website](https://malmo-leaderboard.azurewebsites.net/) where you can compare your results against the other participants.
 
 
 ## Resources
