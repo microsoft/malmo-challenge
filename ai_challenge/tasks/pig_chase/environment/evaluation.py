@@ -18,6 +18,10 @@
 import os
 import sys
 from time import sleep
+from json import dump
+from os.path import exists, join, pardir, abspath
+from os import makedirs
+from numpy import mean, var
 
 from ai_challenge.tasks.pig_chase.agents import PigChaseChallengeAgent
 from ai_challenge.tasks.pig_chase.environment import PigChaseEnvironment, ENV_AGENT_NAMES, \
@@ -26,6 +30,8 @@ from ai_challenge.tasks.pig_chase.environment import PigChaseEnvironment, ENV_AG
 # Enforce path
 sys.path.insert(0, os.getcwd())
 sys.path.insert(1, os.path.join(os.path.pardir, os.getcwd()))
+
+EVAL_EPISODES = 100.
 
 
 class PigChaseEvaluator(object):
@@ -52,11 +58,6 @@ class PigChaseEvaluator(object):
         """
 
         assert experiment_name is not None, 'experiment_name cannot be None'
-
-        from json import dump
-        from os.path import exists, join, pardir, abspath
-        from os import makedirs
-        from numpy import mean, var
 
         # Compute metrics
         metrics = {key: {'mean': mean(buffer),
@@ -94,6 +95,10 @@ class PigChaseEvaluator(object):
         sleep(5)
         agent_loop(self._agent_100k, env, self._accumulators['100k'])
         p.terminate()
+        print('stats:', {key: {'mean': mean(buffer),
+                               'var': var(buffer),
+                               'count': len(buffer)}
+                         for key, buffer in self._accumulators.items()})
 
         print('==================================')
         print('Starting evaluation of Agent @500k')
@@ -103,6 +108,10 @@ class PigChaseEvaluator(object):
         sleep(5)
         agent_loop(self._agent_500k, env, self._accumulators['500k'])
         p.terminate()
+        print('stats:', {key: {'mean': mean(buffer),
+                               'var': var(buffer),
+                               'count': len(buffer)}
+                         for key, buffer in self._accumulators.items()})
 
 
 def run_challenge_agent(clients):
@@ -114,7 +123,6 @@ def run_challenge_agent(clients):
 
 
 def agent_loop(agent, env, metrics_acc):
-    EVAL_EPISODES = 100.
     agent_done = False
     reward = 0
     episode = 0

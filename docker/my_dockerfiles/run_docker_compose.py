@@ -3,12 +3,16 @@ import subprocess
 import argparse
 
 
-def change_command(exp_name, model, reps):
+def change_command(exp_name, model, reps, load_path):
     with open('template.yml', 'r') as handle:
         content = handle.read()
         full_command = '  && '.join([r'python main.py malmo1:10000 malmo2:10000 '
-                                               '-e {} -m {}'.format(exp_name,
-                                                                    model)] * reps) + '''"'''
+                                     '-e {} -m {} -l {}'.format(exp_name,
+                                                                model,
+                                                                load_path)] * reps) + '''"''' if load_path else '  && '.join(
+            [r'python main.py malmo1:10000 malmo2:10000 '
+             '-e {} -m {}'.format(exp_name,
+                                  model)] * reps) + '''"'''
         modified = re.sub(r'python(.*)', full_command,
                           content)
     with open('docker-compose.yml', 'w') as handle:
@@ -23,8 +27,10 @@ def main():
                             help='Name of the model from chainerrl')
     arg_parser.add_argument('--reps', '-r', required=True,
                             help='Repetitions')
+    arg_parser.add_argument('--load', '-l', default=None,
+                            help='Directory to load the saved learner')
     args = arg_parser.parse_args()
-    change_command(args.exp, args.model, int(args.reps))
+    change_command(args.exp, args.model, int(args.reps), args.load)
     subprocess.call('docker-compose up', shell=True)
 
 

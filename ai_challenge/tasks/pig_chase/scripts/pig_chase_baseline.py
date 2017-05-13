@@ -33,9 +33,10 @@ except ImportError:
     print('Cannot import tensorboard, using ConsoleVisualizer.')
     from malmopy.visualization import ConsoleVisualizer
 
-from ai_challenge.utils import parse_clients_args, visualize_training, ENV_AGENT_NAMES, ENV_TARGET_NAMES
-from ai_challenge.pig_chase.agents import PigChaseChallengeAgent, FocusedAgent
-from ai_challenge.pig_chase.environment import PigChaseEnvironment, PigChaseSymbolicStateBuilder
+from ai_challenge.utils import parse_clients_args, visualize_training
+from ai_challenge.tasks.pig_chase.agents import PigChaseChallengeAgent, FocusedAgent
+from ai_challenge.tasks.pig_chase.environment import PigChaseEnvironment, \
+    PigChaseSymbolicStateBuilder, ENV_AGENT_NAMES, ENV_TARGET_NAMES
 
 # Enforce path
 sys.path.insert(0, os.getcwd())
@@ -47,7 +48,6 @@ EPOCH_SIZE = 100
 
 def agent_factory(name, role, baseline_agent, clients, max_epochs,
                   logdir, visualizer):
-
     assert len(clients) >= 2, 'Not enough clients (need at least 2)'
     clients = parse_clients_args(clients)
 
@@ -86,10 +86,7 @@ def agent_factory(name, role, baseline_agent, clients, max_epochs,
 
     else:
 
-        if baseline_agent == 'astar':
-            agent = FocusedAgent(name, ENV_TARGET_NAMES[0])
-        else:
-            agent = RandomAgent(name, env.available_actions)
+
 
         obs = env.reset()
         reward = 0
@@ -97,11 +94,10 @@ def agent_factory(name, role, baseline_agent, clients, max_epochs,
         viz_rewards = []
 
         max_training_steps = EPOCH_SIZE * max_epochs
-        for step in six.moves.range(1, max_training_steps+1):
+        for step in six.moves.range(1, max_training_steps + 1):
 
             # check if env needs reset
             if env.done:
-
                 visualize_training(visualizer, step, viz_rewards)
                 viz_rewards = []
                 obs = env.reset()
@@ -116,8 +112,8 @@ def agent_factory(name, role, baseline_agent, clients, max_epochs,
 
 
 def run_experiment(agents_def):
-    assert len(agents_def) == 2, 'Not enough agents (required: 2, got: %d)'\
-                % len(agents_def)
+    assert len(agents_def) == 2, 'Not enough agents (required: 2, got: %d)' \
+                                 % len(agents_def)
 
     processes = []
     for agent in agents_def:
@@ -164,4 +160,3 @@ if __name__ == '__main__':
               for role, agent in enumerate(ENV_AGENT_NAMES)]
 
     run_experiment(agents)
-

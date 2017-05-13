@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import pickle
+from collections import defaultdict
 import matplotlib.pyplot as plt
 from sklearn import manifold, preprocessing
 from sklearn import decomposition
@@ -17,6 +18,13 @@ def traj_2_array(traj_dict, feature_nm):
             data.append(value)
             traj_ind.append(traj_no)
     return np.concatenate(data), np.array(traj_ind)
+
+
+def reconstruct_traj(data, traj_ind):
+    traj_dict = defaultdict(list)
+    for index, step in zip(traj_ind, data):
+        traj_dict[index].append(step)
+    return traj_dict
 
 
 def fit_dim_red(traj_dict_fn, n_comp, feature_nm):
@@ -37,9 +45,13 @@ def fit_dim_red(traj_dict_fn, n_comp, feature_nm):
                 'Specified dimensionality reduction not found '
                 'in sklearn.mainfold or sklearn.decomposition.')
         trans_data = dim_red_model.fit_transform(data_scaled)
-        col.plot(trans_data[:, 0], trans_data[:, 1], '.')
+        trans_traj_data = reconstruct_traj(trans_data, traj_ind)
+
+        for index, traj in trans_traj_data:
+            col.plot(traj[:, 0], traj[:, 1], '.-b')
         col.set_title(dim_red)
 
     path, f_name = os.path.split(traj_dict_fn)
 
     plt.savefig(os.path.join(get_results_path(), path, f_name + '_dim_red_plot.png'))
+

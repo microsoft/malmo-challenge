@@ -9,6 +9,7 @@ class EnvWrapper(object):
     def __init__(self, agent_env, reward_norm):
         self._agent_env = agent_env
         self._reward_norm = reward_norm
+        sleep(1)
         logger.log(msg='Initialized {}.'.format(self.__class__.__name__), level=logging.INFO)
 
     def step(self, action):
@@ -18,6 +19,8 @@ class EnvWrapper(object):
 
     def deal_with_missing_obs(self, obs, reward, done):
         if obs is None:
+            logger.log(msg='None observation received in {}.'.format(self.__class__.__name__),
+                       level=logging.WARNING)
             obs = self._agent_env.reset()
             reward = 0
             done = False
@@ -31,6 +34,7 @@ class EnvWrapper(object):
 
     def close(self):
         self._agent_env._agent.sendCommand("quit")
+        logger.log(msg='Connection closed.', level=logging.INFO)
 
 
 class SingleEnvWrapper(EnvWrapper):
@@ -63,3 +67,4 @@ class SingleEnvWrapper(EnvWrapper):
     def close(self):
         self._agent_env._agent.sendCommand("quit")
         self._opponent_env._agent.sendCommand("quit")
+        logger.log(msg='Connection closed.', level=logging.INFO)

@@ -1,20 +1,3 @@
-# Copyright (c) 2017 Microsoft Corporation.
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
-# documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
-#  rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
-# and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in all copies or substantial portions of
-# the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
-# THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-#  TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
-# ===================================================================================================================
-
 import os
 import sys
 from argparse import ArgumentParser
@@ -23,21 +6,21 @@ from multiprocessing import Process, Event
 from os import path
 from time import sleep
 
-from malmopy.agent import RandomAgent
 from malmopy.agent.gui import ARROW_KEYS_MAPPING
 from malmopy.visualization import ConsoleVisualizer
 
 from ai_challenge.utils import parse_clients_args
-from ai_challenge.tasks.pig_chase.agents import PigChaseChallengeAgent, PigChaseHumanAgent
+from ai_challenge.tasks.pig_chase.agents import PigChaseHumanAgent
 from ai_challenge.tasks.pig_chase.environment import PigChaseEnvironment, \
-    PigChaseSymbolicStateBuilder, ENV_AGENT_NAMES, ENV_ACTIONS
+    PigChaseSymbolicStateBuilder, ENV_AGENT_NAMES, ENV_ACTIONS, CustomStateBuilder
+from ai_challenge.agents import load_wrap_vb_learner
+from ai_challenge.visualization import PlotDataManager, Plotter
 
 # Enforce path
 sys.path.insert(0, os.getcwd())
 sys.path.insert(1, os.path.join(os.path.pardir, os.getcwd()))
 
 
-EXPERIMENT_NAME = 'Pig_Chase_2xAStar'
 MAX_ACTIONS = 25  # this should match the mission definition, used for display only
 
 
@@ -48,16 +31,25 @@ def agent_factory(name, role, kind, clients, max_episodes, max_actions, logdir, 
     visualizer = ConsoleVisualizer(prefix='Agent %d' % role)
 
     if role == 0:
-        env = PigChaseEnvironment(clients, PigChaseSymbolicStateBuilder(),
+        env = PigChaseEnvironment(clients, CustomStateBuilder(),
                                   actions=ENV_ACTIONS, role=role,
                                   human_speed=True, randomize_positions=True)
-        agent = PigChaseChallengeAgent(name)
 
-        if type(agent.current_agent) == RandomAgent:
-            agent_type = PigChaseEnvironment.AGENT_TYPE_1
-        else:
-            agent_type = PigChaseEnvironment.AGENT_TYPE_2
-        obs = env.reset(agent_type)
+        saved_dir_nm = 'rec_dqn_exp/2017-05-07T15:48:57.564765'
+        saved_learner_nm = '36014'
+        model_used = 'DQN'
+        agent = load_wrap_vb_learner(saved_dir_nm, saved_learner_nm,
+                                     model_used=model_used,
+                                     internal_to_store=[],
+                                     name=ENV_AGENT_NAMES[1],
+                                     nb_actions=len(ENV_ACTIONS))
+        hidden_states_dict = agent.get_model_states_ref(['h2', 'rec_h1', 'lstm_c'])
+
+        plot_data_manager = PlotDataManager(prop_dict=hidden_states_dict, step_dict={})
+        plotter = Plotter(plot_data_manager)
+        plotter.start()
+
+        obs = env.reset()
         reward = 0
         rewards = []
         done = False
@@ -69,15 +61,9 @@ def agent_factory(name, role, kind, clients, max_episodes, max_actions, logdir, 
             action = agent.act(obs, reward, done, True)
 
             if done:
-                visualizer << (episode + 1, 'Reward', sum(rewards))
                 rewards = []
                 episode += 1
-
-                if type(agent.current_agent) == RandomAgent:
-                    agent_type = PigChaseEnvironment.AGENT_TYPE_1
-                else:
-                    agent_type = PigChaseEnvironment.AGENT_TYPE_2
-                obs = env.reset(agent_type)
+                obs = env.reset()
 
             # take a step
             obs, reward, done = env.do(action)

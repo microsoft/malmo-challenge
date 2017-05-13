@@ -1,5 +1,5 @@
 """
-Reinforce PG from chainerrl - it's here since it hasn't been included in the relased library yet.
+Reinforce PG from chainerrl - it's here since it hasn't been included in the library yet.
 It's available on master branch.
 """
 
