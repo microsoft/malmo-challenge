@@ -1,7 +1,12 @@
 [BASIC]
 learner = DoubleDQN
 network = RecNNQFunc
-load_path = None
+load_path = simulation_DoubleDQN_RecNNQFunc_2017-05-14T16:12:59.96/50022
+eval_episodes = 100
+store_opponent_info = True
+optimizer = Adam
+grad_clip = 5.
+
 
 [MEMORY_BUFFER]
 buffer_size = 1000000
@@ -9,33 +14,35 @@ episodic_buffer_size = 50000
 wait_priority_after_sampling = True
 
 [OPTIMIZER]
-optimizer = Adam
-grad_clip = 4.
+eps = 0.01
+beta1 = 0.9
+
 
 [NETWORK]
 input_dim = 86
 output_dim = 3
 w_scale = 0.08
-hidden_units = 250
-rec_dim = 5
+hidden_units = 512
+rec_dim = 10
+activation = relu
 
 [ALGORITHM]
 gpu = -1
 gamma = 1
-replay_start_size = 100
+replay_start_size = 1024
 minibatch_size = 32
-target_update_frequency = 5000
-n_times_update = 15
+target_update_frequency = 20000
+n_times_update = 25
 update_frequency = 2000
 episodic_update = 1
 
 [EXPLORER]
-start_epsilon = 0.25
+start_epsilon = 0.15
 end_epsilon = 0.0
 decay_steps = 500000
 
 [EXPERIMENT]
 steps = 500000
-eval_n_runs = 100
-eval_frequency = 10000
+eval_n_runs = 1000
+eval_frequency = 25000
 max_episode_len = 25

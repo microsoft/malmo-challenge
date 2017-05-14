@@ -1,0 +1,26 @@
+[BASIC]
+network = A3CRecNN
+optimizer = RMSprop
+grad_clip = 40.
+
+[OPTIMIZER]
+alpha = 0.001
+beta1 = 0.95
+
+[NETWORK]
+input_dim = 86
+output_dim = 3
+hidden_units = 256
+
+[ALGORITHM]
+t_max = 5
+gamma = 1
+beta = 0.01
+
+
+[EXPERIMENT]
+steps = 500000
+eval_n_runs = 100
+eval_frequency = 20000
+max_episode_len = 25
+processes = 8

@@ -1,5 +1,6 @@
 import logging
 import numpy as np
+import Queue
 
 from ai_challenge.tasks.pig_chase.environment import PigChaseEnvironment, ENV_BOARD, ENV_ENTITIES, \
     ENV_BOARD_SHAPE, ACTIONS_NUM, BOARD_SIZE, NAME_ENUM, ENT_NUM
@@ -133,3 +134,13 @@ class CustomStateBuilder(MalmoStateBuilder):
             raise e
 
         return transformed_state
+
+
+class ConcatStateBuilder(CustomStateBuilder):
+    def __init__(self, frames_no, state_dim, entities_override=True):
+        super(ConcatStateBuilder, self).__init__(entities_override)
+        self.state_queue = Queue.deque(
+            iterable=[np.zeros((state_dim), dtype=np.float32)] * frames_no, maxlen=frames_no)
+
+    def build(self, environment):
+        self.state_queue.append(super(ConcatStateBuilder, self).build(environment))

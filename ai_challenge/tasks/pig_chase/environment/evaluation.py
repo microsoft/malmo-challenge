@@ -23,6 +23,7 @@ from os.path import exists, join, pardir, abspath
 from os import makedirs
 from numpy import mean, var
 
+from malmopy.visualization.visualizer import CsvVisualizer
 from ai_challenge.tasks.pig_chase.agents import PigChaseChallengeAgent
 from ai_challenge.tasks.pig_chase.environment import PigChaseEnvironment, ENV_AGENT_NAMES, \
     PigChaseSymbolicStateBuilder
@@ -31,18 +32,18 @@ from ai_challenge.tasks.pig_chase.environment import PigChaseEnvironment, ENV_AG
 sys.path.insert(0, os.getcwd())
 sys.path.insert(1, os.path.join(os.path.pardir, os.getcwd()))
 
-EVAL_EPISODES = 100.
+EVAL_EPISODES = 1000.
 
 
 class PigChaseEvaluator(object):
-    def __init__(self, clients, agent_100k, agent_500k, state_builder):
+    def __init__(self, clients, agent_100k, state_builder, out_dir):
         assert len(clients) >= 2, 'Not enough clients provided'
 
         self._clients = clients
         self._agent_100k = agent_100k
-        self._agent_500k = agent_500k
         self._state_builder = state_builder
-        self._accumulators = {'100k': [], '500k': []}
+        self.out_dir = out_dir
+        self._accumulators = {'100k': []}
 
     def save(self, experiment_name, filepath):
         """
@@ -67,20 +68,17 @@ class PigChaseEvaluator(object):
 
         metrics['experimentname'] = experiment_name
 
-        try:
-            filepath = abspath(filepath)
-            parent = join(pardir, filepath)
-            if not exists(parent):
-                makedirs(parent)
+        filepath = abspath(filepath)
+        parent = join(pardir, filepath)
+        if not exists(parent):
+            makedirs(parent)
 
-            with open(filepath, 'w') as f_out:
-                dump(metrics, f_out)
+        with open(filepath, 'w') as f_out:
+            dump(metrics, f_out)
 
-            print('==================================')
-            print('Evaluation done, results written at %s' % filepath)
+        print('==================================')
+        print('Evaluation done, results written at %s' % filepath)
 
-        except Exception as e:
-            print('Unable to save the results: %s' % e)
 
     def run(self):
         from multiprocessing import Process
@@ -90,7 +88,7 @@ class PigChaseEvaluator(object):
         print('==================================')
         print('Starting evaluation of Agent @100k')
 
-        p = Process(target=run_challenge_agent, args=(self._clients,))
+        p = Process(target=run_challenge_agent, args=(self._clients, self.out_dir))
         p.start()
         sleep(5)
         agent_loop(self._agent_100k, env, self._accumulators['100k'])
@@ -100,26 +98,15 @@ class PigChaseEvaluator(object):
                                'count': len(buffer)}
                          for key, buffer in self._accumulators.items()})
 
-        print('==================================')
-        print('Starting evaluation of Agent @500k')
 
-        p = Process(target=run_challenge_agent, args=(self._clients,))
-        p.start()
-        sleep(5)
-        agent_loop(self._agent_500k, env, self._accumulators['500k'])
-        p.terminate()
-        print('stats:', {key: {'mean': mean(buffer),
-                               'var': var(buffer),
-                               'count': len(buffer)}
-                         for key, buffer in self._accumulators.items()})
-
-
-def run_challenge_agent(clients):
+def run_challenge_agent(clients, out_dir):
     builder = PigChaseSymbolicStateBuilder()
+    agent = PigChaseChallengeAgent(ENV_AGENT_NAMES[0], visualizer=CsvVisualizer(
+        output_file=os.path.join(out_dir, 'challenge_agent_type.csv')))
     env = PigChaseEnvironment(clients, builder, role=0,
                               randomize_positions=True)
-    agent = PigChaseChallengeAgent(ENV_AGENT_NAMES[0])
     agent_loop(agent, env, None)
+    agent._visualizer.close()
 
 
 def agent_loop(agent, env, metrics_acc):
@@ -132,7 +119,6 @@ def agent_loop(agent, env, metrics_acc):
         # check if env needs reset
         if env.done:
             print('Episode %d (%.2f)%%' % (episode, (episode / EVAL_EPISODES) * 100.))
-
             obs = env.reset()
             while obs is None:
                 # this can happen if the episode ended with the first

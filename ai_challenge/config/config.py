@@ -1,6 +1,8 @@
 import ConfigParser
 import os
+import shutil
 
+from ai_challenge.utils import get_config_dir
 
 class Config:
     """
@@ -9,7 +11,8 @@ class Config:
 
     def __init__(self, name):
         self.config = ConfigParser.ConfigParser()
-        self.config.read(os.path.join(os.path.dirname(__file__), name))
+        self.config.read(os.path.join(os.path.join(get_config_dir(), name)))
+        self.name = name
 
     def get_as_type(self, type, section, key):
         return type(self.config.get(section, key))
@@ -26,10 +29,12 @@ class Config:
     def get_bool(self, section, key):
         return self.get_as_type(bool, section, key)
 
-    def get_num_section(self, section):
+    def get_section(self, section):
         chosen_section = self.config._sections[section].copy()
         chosen_section.pop('__name__')
-        return {name: self.str_to_num(value) for name, value in chosen_section.items()}
+        return dict(
+            [(name, self.str_to_num(value)) if self.is_number(value) else (name, value)
+             for name, value in chosen_section.items()])
 
     @staticmethod
     def str_to_num(str_val):
@@ -38,9 +43,11 @@ class Config:
         except ValueError:
             return float(str_val)
 
-    def get_path(self, section, key):
-        """
-        This is done to get rid of different relative imports. Every path used in config should be
-        relative to main repo directory and read with this method.
-        """
-        return os.path.join(os.path.dirname(__file__), self.get_as_type(str, section, key))
+    @staticmethod
+    def is_number(str):
+        return str.replace('.', '').isdigit() or str.replace('-', '').isdigit()
+
+    def copy_config(self, dest_dir):
+        if not os.path.isdir(dest_dir):
+            os.makedirs(dest_dir)
+        shutil.copy(os.path.abspath(__file__), os.path.join(dest_dir, self.name))

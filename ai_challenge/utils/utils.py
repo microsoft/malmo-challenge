@@ -34,7 +34,7 @@ def visualize_training(visualizer, step, rewards=None, tag='Training', **kwargs)
         visualizer.add_entry(step, '%s/min.reward' % tag, min(rewards))
         visualizer.add_entry(step, '%s/actions per episode' % tag, len(rewards) - 1)
     for name, value in kwargs.items():
-        visualizer.add_entry(step, '{}/'.format(tag) + name, np.array2string(value))
+        visualizer.add_entry(step, '{}/'.format(tag) + name, value)
 
 
 class Entity(object):

@@ -21,16 +21,19 @@ def main():
     arg_parser.add_argument('--logs_path', '-l',
                             help='Relative path to store logs.',
                             default='ai_challenge.logs')
+    arg_parser.add_argument('--reps', '-r',
+                            help='Repetitions of experiment.',
+                            default=1)
     args = arg_parser.parse_args()
-    logging.basicConfig(filename=args.logs_path, level=logging.INFO)
+    logging.basicConfig(filename=args.logs_path, level=logging.DEBUG)
     clients = parse_clients_args(args.clients)
     # run selected experiment with passed clients
     logging.log(
         msg='Starting exp {} with config {} and with clients {}.'
             .format(args.exp, args.cfg, args.clients), level=logging.INFO)
 
-    getattr(experiments, args.exp)(clients, args.cfg)
-
+    for _ in range(int(args.reps)):
+        getattr(experiments, args.exp)(clients, args.cfg)
 
     logging.log(msg='Exiting main.', level=logging.INFO)
 

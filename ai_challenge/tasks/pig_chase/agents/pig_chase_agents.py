@@ -38,6 +38,7 @@ CELL_WIDTH = 33
 
 logger = logging.getLogger(__name__)
 
+
 class PigChaseChallengeAgent(BaseAgent):
     """Pig Chase challenge agent - behaves focused or random."""
 
@@ -51,15 +52,19 @@ class PigChaseChallengeAgent(BaseAgent):
                                          visualizer=visualizer))
         self._agents.append(RandomAgent(name, nb_actions,
                                         visualizer=visualizer))
-        self.current_agent = self._select_agent(P_FOCUSED)
+        self.epi_counter = 0
+        self._select_agent(P_FOCUSED)
 
     def _select_agent(self, p_focused):
-        return self._agents[np.random.choice(range(len(self._agents)),
-                                             p=[p_focused, 1. - p_focused])]
+        self.current_agent = self._agents[np.random.choice(range(len(self._agents)),
+                                                           p=[p_focused, 1. - p_focused])]
+        if self.can_visualize:
+            self.visualize(self.epi_counter, 'type', self.current_agent.__class__.__name__)
+            self.epi_counter += 1
 
     def act(self, new_state, reward, done, is_training=False):
         if done:
-            self.current_agent = self._select_agent(P_FOCUSED)
+            self._select_agent(P_FOCUSED)
             logging.log(
                 msg='Challenge agent using: {}'.format(self.current_agent.__class__.__name__),
                 level=logging.DEBUG)

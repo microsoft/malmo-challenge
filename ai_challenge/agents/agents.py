@@ -1,12 +1,10 @@
-import os
 import pickle
 from collections import defaultdict
 
 from malmopy.agent import BaseAgent
 from malmopy.visualization.visualizer import CsvVisualizer
 
-from ai_challenge.utils import visualize_training, get_results_path
-from ai_challenge.experiments import create_value_based_learner
+from ai_challenge.utils import visualize_training
 
 
 class LearningAgent(BaseAgent):
@@ -43,12 +41,12 @@ class LearningAgent(BaseAgent):
                 self._internal_to_store)
 
         if done:
-            print('done')
             self.learner.model.reset_state()
             self._epi_counter += 1
             self._step_counter = 0
             visualize_training(visualizer=self._visualizer, step=self._epi_counter,
                                rewards=self._rewards)
+
             self._rewards = []
 
         return action
@@ -80,16 +78,3 @@ class LearningAgent(BaseAgent):
             ref = getattr(self.learner.model.model, state_nm)
             ref_dict[state_nm] = ref
         return ref_dict
-
-
-def load_wrap_vb_learner(saved_dir_nm, saved_learner_nm, model_used, nb_actions, name,
-                         internal_to_store):
-    learner = create_value_based_learner(model_type=model_used)
-    learner.load(os.path.join(get_results_path(), saved_dir_nm, saved_learner_nm))
-    created_agent = LearningAgent(learner=learner,
-                                  name=name,
-                                  nb_actions=nb_actions,
-                                  out_dir=os.path.join(get_results_path(), saved_dir_nm,
-                                                       'state_data'),
-                                  internal_to_store=internal_to_store)
-    return created_agent

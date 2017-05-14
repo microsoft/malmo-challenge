@@ -1,1 +1,1 @@
-from agents import *
+from .agents import *

@@ -1,3 +1,4 @@
+import Queue
 import numpy as np
 
 from ai_challenge.tasks.pig_chase.environment.extensions import rotated_board_map
@@ -42,8 +43,10 @@ class EnvSimulator(object):
         self.neg_rot_matrix = np.array([[0, 1], [-1, 0]])
         self.done = False
         self.full_state = np.zeros((size, size, 3))
-        self.reset()
         self.pssd_steps = 0
+        self._player_state_rep = self.get_full_state
+        self._opponent_state_rep = self.get_full_state
+        self.reset()
 
     def move(self, ent_state, move):
         assert not self.done
@@ -64,22 +67,22 @@ class EnvSimulator(object):
         return self.escape_reward if self.escaped(ent_state) else self.step_reward
 
     def is_done(self):
-        return self.is_target_surrounded() or self.escaped(self.gs.ps) or self.escaped(self.gs.os)
+        return self.is_target_surrounded() or self.escaped(self.gs.ps) or self.escaped(
+            self.gs.os) or self.pssd_steps >= 25
 
     def escaped(self, ent_state):
         return (ent_state.x == self.mid_exit_coord and ent_state.y == 0) \
                or (ent_state.x == self.mid_exit_coord and ent_state.y == self.size - 1)
 
     def step(self, player_action, opponent_action):
-        self.pssd_steps += 1
-        assert not self.done
         self.move(self.gs.ps, player_action)
         if self.is_done():
-            return self.gs.ps, self.gs.os, self.reward(self.gs.ps), self.reward(self.gs.os), True
+            return self._player_state_rep(), self._opponent_state_rep(), self.reward(
+                self.gs.ps), self.reward(self.gs.os), True
         self.move(self.gs.os, opponent_action)
         if self.is_done():
             return self.gs.ps, self.gs.os, self.reward(self.gs.ps), self.reward(self.gs.os), True
-        return self.gs.ps, self.gs.os, self.step_reward, self.step_reward, False
+        return self._player_state_rep(), self._opponent_state_rep(), self.step_reward, self.step_reward, False
 
     def is_target_surrounded(self):
         return all([(self.gs.ts.x + rot_vec[0], self.gs.ts.y + rot_vec[1]) == (
@@ -162,6 +165,11 @@ class MinecraftSimulator(EnvSimulator):
     _z_offset = 1
     _x_offset = 1
 
+    def __init__(self, *args, **kwargs):
+        super(MinecraftSimulator, self).__init__(*args, **kwargs)
+        self._player_state_rep = self.get_minecraft_state
+        self._opponent_state_rep = self.get_minecraft_state
+
     @staticmethod
     def generate_yaw(rot_x, rot_y):
         if [rot_x, rot_y] == [0, 1]:
@@ -190,19 +198,33 @@ class FixedOpponentSimulator(MinecraftSimulator):
         super(FixedOpponentSimulator, self).__init__(size)
         self.opponent = opponent
         self.opponent_reward = 0
+        self._player_state_rep = self.get_rotated_state
 
-    def step(self, player_action):
-        opponent_action = self.opponent.act(self.get_minecraft_state(), self.opponent_reward,
-                                            self.done)
+    def step(self, player_action, *args):
+        self.pssd_steps += 1
+        opponent_action = self.opponent.act(self._opponent_state_rep(), self.opponent_reward,
+                                            self.is_done())
         _, _, player_rew, self.opponent_reward, done = \
             super(FixedOpponentSimulator, self).step(player_action, opponent_action)
 
-        return self.get_rotated_state(), player_rew, done, None
+        return self._player_state_rep(), player_rew, done, None
 
     def reset(self):
         self.opponent_reward = 0
         super(FixedOpponentSimulator, self).reset()
-        return self.get_rotated_state()
+        return self._player_state_rep()
 
     def get_rotated_state(self):
         return rotated_board_map(self.get_minecraft_state(), self.pssd_steps, self.done)
+
+
+class FixedOpponentSimulatorMDP(FixedOpponentSimulator):
+    def __init__(self, opponent_size, state_dim, frames_no=4):
+        super(FixedOpponentSimulatorMDP, self).__init__(opponent_size, state_dim)
+        self.state_queue = Queue.deque(
+            iterable=[np.zeros((state_dim,), dtype=np.float32)] * frames_no, maxlen=frames_no)
+        self._player_state_rep = self.get_mdp_state
+
+    def get_mdp_state(self):
+        self.state_queue.append(self.get_rotated_state())
+        np.concatenate(self.state_queue)
