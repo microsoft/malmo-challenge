@@ -1,14 +1,24 @@
 [BASIC]
-network = A3CRecNN
+learner = A3C
+network = A3CNN
 optimizer = RMSprop
+load_path =
+use_episodic_buffer = 0
 grad_clip = 40.
+simulator = FixedOpponentSimulatorMDP
 
 [OPTIMIZER]
-alpha = 0.001
-beta1 = 0.95
+lr=0.005
+eps=0.01
+alpha=0.99
+
+[SIMULATOR]
+size = 7
+state_dim = 86
+frames_no = 4
 
 [NETWORK]
-input_dim = 86
+input_dim = 344
 output_dim = 3
 hidden_units = 256
 
@@ -19,8 +29,8 @@ beta = 0.01
 
 
 [EXPERIMENT]
-steps = 500000
-eval_n_runs = 100
+steps = 1000000
+eval_n_runs = 1000
 eval_frequency = 20000
 max_episode_len = 25
-processes = 8
+processes = 2

@@ -36,8 +36,9 @@ ENV_INDIVIDUAL_REWARD = 5
 ENV_CAUGHT_REWARD = 25
 ACTIONS_NUM = 25.
 BOARD_SIZE = 5
+BOARD_OFFSET = np.floor(BOARD_SIZE/2.).astype(np.int32)
 ENT_NUM = len(ENV_AGENT_NAMES) + len(ENV_TARGET_NAMES)
-NAME_ENUM = {'Pig': 1, 'Agent_1': 2, 'Agent_2': 3}
+NAME_ENUM = {'Pig': 0, 'Agent_1': 1, 'Agent_2': 2}
 
 
 class PigChaseSymbolicStateBuilder(MalmoStateBuilder):

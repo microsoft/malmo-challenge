@@ -4,6 +4,10 @@ from threading import Thread
 
 logger = logging.getLogger(__name__)
 
+"""
+Wraps environment which can be used by 2 players to make it usable by chainerrl library.
+"""
+
 
 class EnvWrapper(object):
     def __init__(self, agent_env, reward_norm):

@@ -117,10 +117,10 @@
             <AgentQuitFromTouchingBlockType>
                 <Block type="lapis_block" description="Agent_1_defaulted"/>
             </AgentQuitFromTouchingBlockType>
-            <VideoProducer want_depth="false">
-                <Width>640</Width>
-                <Height>480</Height>
-            </VideoProducer>
+            <!--<VideoProducer want_depth="false">-->
+                <!--<Width>640</Width>-->
+                <!--<Height>480</Height>-->
+            <!--</VideoProducer>-->
         </AgentHandlers>
     </AgentSection>
 
@@ -165,10 +165,10 @@
             <AgentQuitFromCatchingMob>
                 <Mob type="Pig" description="caught_the_pig" global="true"/>
             </AgentQuitFromCatchingMob>
-            <VideoProducer want_depth="false">
-                <Width>640</Width>
-                <Height>480</Height>
-            </VideoProducer>
+            <!--<VideoProducer want_depth="false">-->
+                <!--<Width>640</Width>-->
+                <!--<Height>480</Height>-->
+            <!--</VideoProducer>-->
         </AgentHandlers>
     </AgentSection>
 </Mission>

@@ -13,7 +13,7 @@ from ai_challenge.utils import parse_clients_args
 from ai_challenge.tasks.pig_chase.agents import PigChaseHumanAgent
 from ai_challenge.tasks.pig_chase.environment import PigChaseEnvironment, \
     PigChaseSymbolicStateBuilder, ENV_AGENT_NAMES, ENV_ACTIONS, CustomStateBuilder
-from ai_challenge.agents import load_wrap_vb_learner
+from ai_challenge.experiments import load_wrap_vb_learner
 from ai_challenge.visualization import PlotDataManager, Plotter
 
 # Enforce path

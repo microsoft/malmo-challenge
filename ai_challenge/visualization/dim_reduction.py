@@ -55,14 +55,13 @@ def fit_dim_red(traj_dict_fn, n_comp, feature_nm, opponent_type_fn=None):
                 'in sklearn.mainfold or sklearn.decomposition.')
         trans_data = dim_red_model.fit_transform(data_scaled)
         trans_traj_data = reconstruct_traj(trans_data, traj_ind)
-        cmap = plt.cm.hot
         for index, traj in trans_traj_data.items():
-            point_type = 1
+            point_type = '.b'
             if opponent_type_fn is not None:
                 opp_typ = opponent_type[index]
-                point_type = 1 if opp_typ == 0 else -1
+                point_type = '.r' if opp_typ == 0 else '.b'
             for step, point in enumerate(traj):
-                col.scatter(point[0], point[1], c=cmap(point_type * (0.5 + step/25.)) , s=1.)
+                col.plot(point[0], point[1], point_type)
         col.set_title(dim_red)
 
     path, f_name = os.path.split(traj_dict_fn)

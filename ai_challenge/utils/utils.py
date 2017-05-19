@@ -15,7 +15,9 @@
 # SOFTWARE.
 # ===================================================================================================================
 
-import numpy as np
+"""
+Various helper classes and functions.
+"""
 
 
 def parse_clients_args(args_clients):

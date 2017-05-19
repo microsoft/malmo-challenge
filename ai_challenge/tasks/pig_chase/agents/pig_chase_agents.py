@@ -42,7 +42,7 @@ logger = logging.getLogger(__name__)
 class PigChaseChallengeAgent(BaseAgent):
     """Pig Chase challenge agent - behaves focused or random."""
 
-    def __init__(self, name, visualizer=None):
+    def __init__(self, name, visualizer=None, p_focused=0.75):
         nb_actions = len(ENV_ACTIONS)
         super(PigChaseChallengeAgent, self).__init__(name, nb_actions,
                                                      visualizer=visualizer)
@@ -53,18 +53,19 @@ class PigChaseChallengeAgent(BaseAgent):
         self._agents.append(RandomAgent(name, nb_actions,
                                         visualizer=visualizer))
         self.epi_counter = 0
-        self._select_agent(P_FOCUSED)
+        self.p_focused = p_focused
+        self._select_agent()
 
-    def _select_agent(self, p_focused):
+    def _select_agent(self):
         self.current_agent = self._agents[np.random.choice(range(len(self._agents)),
-                                                           p=[p_focused, 1. - p_focused])]
+                                                           p=[self.p_focused, 1. - self.p_focused])]
         if self.can_visualize:
             self.visualize(self.epi_counter, 'type', self.current_agent.__class__.__name__)
             self.epi_counter += 1
 
     def act(self, new_state, reward, done, is_training=False):
         if done:
-            self._select_agent(P_FOCUSED)
+            self._select_agent()
             logging.log(
                 msg='Challenge agent using: {}'.format(self.current_agent.__class__.__name__),
                 level=logging.DEBUG)

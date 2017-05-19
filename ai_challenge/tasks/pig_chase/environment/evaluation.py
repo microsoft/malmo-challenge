@@ -32,7 +32,7 @@ from ai_challenge.tasks.pig_chase.environment import PigChaseEnvironment, ENV_AG
 sys.path.insert(0, os.getcwd())
 sys.path.insert(1, os.path.join(os.path.pardir, os.getcwd()))
 
-EVAL_EPISODES = 1000.
+EVAL_EPISODES = 100.
 
 
 class PigChaseEvaluator(object):
@@ -78,7 +78,6 @@ class PigChaseEvaluator(object):
 
         print('==================================')
         print('Evaluation done, results written at %s' % filepath)
-
 
     def run(self):
         from multiprocessing import Process

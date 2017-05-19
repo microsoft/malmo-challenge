@@ -1,6 +1,9 @@
 import os
 from ai_challenge import ROOT_DIR
 
+"""
+Directories used within this project should be defined here.
+"""
 
 def check_file(path, file):
     if not os.path.isfile(os.path.join(path, file)):

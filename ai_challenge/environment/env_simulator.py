@@ -1,7 +1,11 @@
 import Queue
 import numpy as np
 
-from ai_challenge.tasks.pig_chase.environment.extensions import rotated_board_map
+from ai_challenge.tasks.pig_chase.environment.extensions import board_rotator
+
+"""
+This module implements a simulator that can speed up training.
+"""
 
 
 class EnvSimulator(object):
@@ -13,7 +17,6 @@ class EnvSimulator(object):
             self.rot_y = rot_y
 
     class GameState(object):
-
         def __init__(self, player_state, opponent_state, target_state):
             self.ps = player_state
             self.os = opponent_state
@@ -114,7 +117,6 @@ class EnvSimulator(object):
                         state in states]):
                     states.append(EnvSimulator.State(x, y, rot_x, rot_y))
                     break
-
         return states
 
     def play(self):
@@ -132,7 +134,7 @@ class EnvSimulator(object):
         self.full_state[self.gs.ps.x, self.gs.ps.y, :] = [1, 0, 0]
         self.full_state[self.gs.os.x, self.gs.os.y, :] = [0, 1, 0]
         self.full_state[self.gs.ts.x, self.gs.ts.y, :] = [0, 0, 1]
-        self.trans_state = np.concatenate((self.full_state.ravel(),
+        self.trans_state = np.concatenate((self.full_state[1:-1, 1:-1, :].ravel(),
                                            [self.gs.ps.rot_x, self.gs.ps.rot_y],
                                            [self.gs.os.rot_x, self.gs.os.rot_y],
                                            [self.gs.ts.rot_x, self.gs.ts.rot_y]))
@@ -198,7 +200,7 @@ class FixedOpponentSimulator(MinecraftSimulator):
         super(FixedOpponentSimulator, self).__init__(size)
         self.opponent = opponent
         self.opponent_reward = 0
-        self._player_state_rep = self.get_rotated_state
+        self._player_state_rep = self.get_full_state
 
     def step(self, player_action, *args):
         self.pssd_steps += 1
@@ -206,7 +208,6 @@ class FixedOpponentSimulator(MinecraftSimulator):
                                             self.is_done())
         _, _, player_rew, self.opponent_reward, done = \
             super(FixedOpponentSimulator, self).step(player_action, opponent_action)
-
         return self._player_state_rep(), player_rew, done, None
 
     def reset(self):
@@ -215,16 +216,26 @@ class FixedOpponentSimulator(MinecraftSimulator):
         return self._player_state_rep()
 
     def get_rotated_state(self):
-        return rotated_board_map(self.get_minecraft_state(), self.pssd_steps, self.done)
+        return board_rotator.rotate_board_map(self.get_minecraft_state(), self.pssd_steps,
+                                              self.done)
 
 
 class FixedOpponentSimulatorMDP(FixedOpponentSimulator):
-    def __init__(self, opponent_size, state_dim, frames_no=4):
-        super(FixedOpponentSimulatorMDP, self).__init__(opponent_size, state_dim)
+    def __init__(self, opponent, size, state_dim, frames_no=4):
+        self.state_dim = state_dim
+        self.frames_no = frames_no
+        super(FixedOpponentSimulatorMDP, self).__init__(opponent, size)
         self.state_queue = Queue.deque(
             iterable=[np.zeros((state_dim,), dtype=np.float32)] * frames_no, maxlen=frames_no)
         self._player_state_rep = self.get_mdp_state
 
     def get_mdp_state(self):
         self.state_queue.append(self.get_rotated_state())
-        np.concatenate(self.state_queue)
+        return np.concatenate(self.state_queue)
+
+    def reset(self):
+        super(FixedOpponentSimulatorMDP, self).reset()
+        self.state_queue = Queue.deque(
+            iterable=[np.zeros((self.state_dim,), dtype=np.float32)] * self.frames_no,
+            maxlen=self.frames_no)
+        return self._player_state_rep()
