@@ -40,7 +40,7 @@ class NN(chainer.Chain):
 
 
 class RecNN(chainer.Chain, RecurrentChainMixin):
-    def __init__(self, input_dim, output_dim, hidden_units, rec_dim=10, w_scale=0.01,
+    def __init__(self, input_dim, output_dim, hidden_units, rec_dim=20, w_scale=0.01,
                  initial_bias=0.0,
                  activation='relu'):
         super(RecNN, self).__init__(
@@ -91,19 +91,6 @@ class A3CNN(chainer.ChainList, a3c.A3CModel, RecurrentChainMixin):
 
     def pi_and_v(self, state):
         return self.pi(state), self.v(state)
-
-
-class ACERNN(chainer.Chain, RecurrentChainMixin):
-    def __init__(self, input_dim, output_dim, hidden_units):
-        pi = SoftmaxPolicy(model=RecNN(input_dim, output_dim, hidden_units, w_scale=0.01))
-        q = RecNN(input_dim, output_dim, hidden_units, w_scale=0.01)
-        super(ACERNN, self).__init__(pi=pi, q=q)
-
-    def __call__(self, obs):
-        action_distrib = self.pi(obs)
-        action_value = DiscreteActionValue(self.q(obs))
-        v = fun.sum(action_distrib.all_prob * action_value.q_values, axis=1)
-        return action_distrib, action_value, v
 
 
 class DuelingNN(chainer.Chain, StateQFunction):

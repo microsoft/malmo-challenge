@@ -28,17 +28,9 @@ def create_async_learner(cfg_name):
     opt = rmsprop_async.RMSpropAsync(**config.get_section('OPTIMIZER'))
     opt.setup(network)
     opt.add_hook(optimizer.GradientClipping(threshold=config.get_float('BASIC', 'grad_clip')))
-    if config.get_int('BASIC', 'use_episodic_buffer'):
-        rep_buf = replay_buffer.EpisodicReplayBuffer(10 ** 5)
-        learner = getattr(agents, config.get_str('BASIC', 'learner'))(network, opt,
-                                                                      replay_buffer=rep_buf,
-                                                                      **config.get_section(
-                                                                          'ALGORITHM'))
-    else:
-        learner = getattr(agents, config.get_str('BASIC', 'learner'))(network, opt,
-                                                                      **config.get_section(
-                                                                          'ALGORITHM'))
-
+    learner = getattr(agents, config.get_str('BASIC', 'learner'))(network, opt,
+                                                                  **config.get_section(
+                                                                      'ALGORITHM'))
     return learner
 
 
@@ -168,7 +160,7 @@ def simulation(clients, passed_config):
                                                             datetime.utcnow().isoformat()[:-4]))
     experiment_cfg["outdir"] = results_dir
     sim_config.copy_config(results_dir)
-    opponent = PigChaseChallengeAgent(name="Agent_1", p_focused=1.0)
+    opponent = PigChaseChallengeAgent(name="Agent_1", p_focused=1.)
     agent_env = getattr(env_simulator, sim_config.get_str('BASIC', 'simulator'))(opponent=opponent,
                                                                                  **sim_config.get_section(
                                                                                      'SIMULATOR'))
@@ -198,8 +190,7 @@ def eval_simulation(clients, passed_config):
     agent = load_wrap_vb_learner(saved_dir_nm, saved_learner_nm, passed_config,
                                  internal_to_store=[],
                                  name='evaluation_agent',
-                                 nb_actions=eval_config.get_int('NETWORK',
-                                                                'output_dim'))
+                                 nb_actions=eval_config.get_int('NETWORK','output_dim'))
 
     eval_episodes_num = eval_config.get_int('BASIC', 'eval_episodes')
     reward_sum = 0.

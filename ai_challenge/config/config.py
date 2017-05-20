@@ -1,8 +1,8 @@
 import ConfigParser
 import os
-import shutil
 
 from ai_challenge.utils import get_config_dir
+
 
 class Config:
     """
@@ -44,10 +44,12 @@ class Config:
             return float(str_val)
 
     @staticmethod
-    def is_number(str):
-        return str.replace('.', '').isdigit() or str.replace('-', '').isdigit()
+    def is_number(input_):
+        return input_.replace('.', '').isdigit() or input_.replace('-', '').isdigit()
 
     def copy_config(self, dest_dir):
         if not os.path.isdir(dest_dir):
             os.makedirs(dest_dir)
-        shutil.copy(os.path.abspath(__file__), os.path.join(dest_dir, self.name))
+        with open(os.path.join(os.path.join(get_config_dir(), self.name))) as dest_handle, open(
+                os.path.join(dest_dir, self.name), "w") as trg_handle:
+            trg_handle.write(dest_handle.read())

@@ -1,13 +1,13 @@
-import os
-from ai_challenge import ROOT_DIR
-
 """
 Directories used within this project should be defined here.
 """
+import os
+from ai_challenge import ROOT_DIR
 
-def check_file(path, file):
-    if not os.path.isfile(os.path.join(path, file)):
-        raise ValueError('File {} not found in {}'.format(file, path))
+
+def check_file(path, filename):
+    if not os.path.isfile(os.path.join(path, filename)):
+        raise ValueError('File {} not found in {}'.format(filename, path))
 
 
 def check_create_dir(path):

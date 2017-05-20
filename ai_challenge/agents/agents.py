@@ -1,14 +1,12 @@
+"""
+LearningAgent is supposed to wrap agent from chainerrl library and provide interface
+to run it in specific environment.
+"""
 import pickle
 from collections import defaultdict
-
 from ai_challenge.utils import visualize_training
 from malmopy.agent import BaseAgent
 from malmopy.visualization.visualizer import CsvVisualizer
-
-"""
-LearningAgent is supposed to wrap agent from chainerrl library and provide interface
-to run it in Malmo.
-"""
 
 
 class LearningAgent(BaseAgent):
@@ -82,5 +80,3 @@ class LearningAgent(BaseAgent):
             ref = getattr(self.learner.model.model, state_nm)
             ref_dict[state_nm] = ref
         return ref_dict
-
-

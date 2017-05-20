@@ -25,7 +25,7 @@ def main():
                             help='Repetitions of experiment.',
                             default=1)
     args = arg_parser.parse_args()
-    logging.basicConfig(filename=args.logs_path, level=logging.DEBUG)
+    logging.basicConfig(filename=args.logs_path, level=logging.INFO)
     clients = parse_clients_args(args.clients)
     # run selected experiment with passed clients
     logging.log(

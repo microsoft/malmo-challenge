@@ -16,7 +16,7 @@
 # ===================================================================================================================
 
 from ai_challenge.tasks.pig_chase.environment import PigChaseTopDownStateBuilder, ENV_AGENT_NAMES
-from ai_challenge.tasks.pig_chase.environment.evaluation import PigChaseEvaluator
+from ai_challenge.tasks.pig_chase.scripts.evaluation import PigChaseEvaluator
 from malmopy.agent import RandomAgent
 
 if __name__ == '__main__':
