@@ -1,4 +1,4 @@
-version: '3'
+version: '2'
 services:
   malmo1:
     image: malmo:latest
@@ -10,8 +10,9 @@ services:
         - "10000"
   agents:
       image: my_exp:latest
-      working_dir: /root/malmo-challenge/ai_challenge
-      command: bash -c "python main.py malmo1:10000 malmo2:10000 -e rec_value_based_exp -m DoubleDQN -l rec_value_based_DoubleDQN/2017-05-12T10:46:23.385882/500100_finish"
+      volumes: ../../ai_challenge/tasks/pig_chase/scripts:/root/malmo-challenge/ai_challenge/tasks/pig_chase/scripts
+      working_dir: /root/malmo-challenge/ai_challenge/tasks/pig_chase/scripts
+      command: bash -c "python evaluate_trained_agent.py malmo1:10000 malmo2:10000 -c eval_config.txt
       ports:
         - "6006:6006"
       links:
