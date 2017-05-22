@@ -1,5 +1,6 @@
 import argparse
 import logging
+import ai_challenge
 from ai_challenge import experiments
 from utils import parse_clients_args
 
@@ -7,6 +8,9 @@ logger = logging.getLogger(__name__)
 
 
 def main():
+    """
+    Main function that canbe run from command line.
+    """
     arg_parser = argparse.ArgumentParser()
     arg_parser.add_argument('clients',
                             nargs='*',

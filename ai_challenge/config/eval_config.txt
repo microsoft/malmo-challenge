@@ -1,0 +1,48 @@
+[BASIC]
+learner = DoubleDQN
+network = DuelingNN
+optimizer = Adam
+load_path = simulation_DoubleDQN_DuelingNN_2017-05-22T18:42:50.78/380003
+grad_clip = 5.
+simulator = FixedOpponentSimulator
+eval_episodes = 10000
+
+[MEMORY_BUFFER]
+buffer_size = 5000000
+episodic_buffer_size = 100000
+wait_priority_after_sampling = False
+
+[SIMULATOR]
+size = 7
+
+[OPTIMIZER]
+alpha = 0.001
+beta1 = 0.9
+
+[NETWORK]
+input_dim = 96
+output_dim = 3
+w_scale = 1.
+hidden_units = 1024
+activation = relu
+
+[ALGORITHM]
+gpu =  -1
+gamma = 0.8
+replay_start_size = 512
+minibatch_size = 512
+target_update_frequency = 15000
+n_times_update = 1
+update_frequency = 5
+episodic_update = 0
+
+[EXPLORER]
+start_epsilon = 0.05
+end_epsilon = 0.0
+decay_steps = 500000
+
+[EXPERIMENT]
+steps = 1000000
+eval_n_runs = 1000
+eval_frequency = 20000
+max_episode_len = 25

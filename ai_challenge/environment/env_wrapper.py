@@ -1,15 +1,19 @@
+"""
+Wraps environment which can be used by 2 players to make it usable by chainerrl library.
+"""
 import logging
 from time import sleep
 from threading import Thread
 
 logger = logging.getLogger(__name__)
 
-"""
-Wraps environment which can be used by 2 players to make it usable by chainerrl library.
-"""
-
 
 class EnvWrapper(object):
+    """
+    Basic wrapper that can be used to wrap malmopy environment so it can be used with
+    libraries requiring OpenAI-like interface.
+    """
+
     def __init__(self, agent_env, reward_norm):
         self._agent_env = agent_env
         self._reward_norm = reward_norm
@@ -42,6 +46,10 @@ class EnvWrapper(object):
 
 
 class SingleEnvWrapper(EnvWrapper):
+    """
+    Wrapper that fixes the opponent in EnvWrapper.
+    """
+
     def __init__(self, agent_env, opponent_env, opponent, reward_norm):
         super(SingleEnvWrapper, self).__init__(agent_env, reward_norm)
         self._opponent = opponent
@@ -65,7 +73,6 @@ class SingleEnvWrapper(EnvWrapper):
                 self._opponent_env.reset()
 
             action = self._opponent.act(obs, reward, done, is_training=True)
-
             obs, reward, done = self._opponent_env.do(action)
 
     def close(self):

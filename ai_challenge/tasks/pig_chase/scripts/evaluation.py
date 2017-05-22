@@ -18,13 +18,10 @@
 import os
 import sys
 from time import sleep
-from json import dump
-from os.path import exists, join, pardir, abspath
-from os import makedirs
-from numpy import mean, var
 
 from ai_challenge.tasks.pig_chase.environment import PigChaseEnvironment, ENV_AGENT_NAMES, \
     PigChaseSymbolicStateBuilder
+from ai_challenge.tasks.pig_chase.agents import PigChaseChallengeAgent
 
 # Enforce path
 sys.path.insert(0, os.getcwd())
@@ -32,32 +29,35 @@ sys.path.insert(1, os.path.join(os.path.pardir, os.getcwd()))
 
 
 class PigChaseEvaluator(object):
-    def __init__(self, clients, agent_100k, opponent, state_builder, opponent_state_builder, out_dir, eval_episodes):
+    def __init__(self, clients, agent_100k, agent_500k, state_builder, reps):
         assert len(clients) >= 2, 'Not enough clients provided'
 
         self._clients = clients
         self._agent_100k = agent_100k
+        self._agent_500k = agent_500k
+        self._reps = reps
         self._state_builder = state_builder
-        self.out_dir = out_dir
-        self._opponent = opponent
-        self._accumulators = {'100k': []}
-        self._eval_episodes = eval_episodes
-        self._opponent_state_builder = opponent_state_builder
+        self._accumulators = {'100k': [], '500k': []}
 
     def save(self, experiment_name, filepath):
         """
         Save the evaluation results in a JSON file 
         understandable by the leaderboard.
-        
+
         Note: The leaderboard will not accept a submission if you already 
         uploaded a file with the same experiment name.
-        
+
         :param experiment_name: An identifier for the experiment
         :param filepath: Path where to store the results file
         :return: 
         """
 
         assert experiment_name is not None, 'experiment_name cannot be None'
+
+        from json import dump
+        from os.path import exists, join, pardir, abspath
+        from os import makedirs
+        from numpy import mean, var
 
         # Compute metrics
         metrics = {key: {'mean': mean(buffer),
@@ -66,12 +66,6 @@ class PigChaseEvaluator(object):
                    for key, buffer in self._accumulators.items()}
 
         metrics['experimentname'] = experiment_name
-
-        filepath = abspath(filepath)
-        parent = join(pardir, filepath)
-        if not exists(parent):
-            makedirs(parent)
-
         with open(filepath, 'w') as f_out:
             dump(metrics, f_out)
 
@@ -86,35 +80,41 @@ class PigChaseEvaluator(object):
         print('==================================')
         print('Starting evaluation of Agent @100k')
 
-        p = Process(target=run_challenge_agent,
-                    args=(self._clients, self.out_dir, self._opponent, self._opponent_state_builder, self._eval_episodes))
+        p = Process(target=run_challenge_agent, args=(self._clients, self._reps))
         p.start()
         sleep(5)
-        agent_loop(self._agent_100k, env, self._accumulators['100k'], self._eval_episodes)
+        agent_loop(self._agent_100k, env, self._accumulators['100k'], self._reps)
         p.terminate()
-        print('stats:', {key: {'mean': mean(buffer),
-                               'var': var(buffer),
-                               'count': len(buffer)}
-                         for key, buffer in self._accumulators.items()})
+
+        print('==================================')
+        print('Starting evaluation of Agent @500k')
+
+        p = Process(target=run_challenge_agent, args=(self._clients, self._reps))
+        p.start()
+        sleep(5)
+        agent_loop(self._agent_500k, env, self._accumulators['500k'], self._reps)
+        p.terminate()
 
 
-def run_challenge_agent(clients, out_dir, opponent, opponent_st_builder, eval_episodes):
-    env = PigChaseEnvironment(clients, opponent_st_builder, role=0,
+def run_challenge_agent(clients, repetitions):
+    builder = PigChaseSymbolicStateBuilder()
+    env = PigChaseEnvironment(clients, builder, role=0,
                               randomize_positions=True)
-    agent_loop(opponent, env, None, eval_episodes)
-    opponent._visualizer.close()
+    agent = PigChaseChallengeAgent(ENV_AGENT_NAMES[0])
+    agent_loop(agent, env, None, repetitions)
 
 
-def agent_loop(agent, env, metrics_acc, eval_episodes):
+def agent_loop(agent, env, metrics_acc, repetitions):
     agent_done = False
     reward = 0
     episode = 0
     obs = env.reset()
 
-    while episode < eval_episodes:
+    while episode < repetitions:
         # check if env needs reset
         if env.done:
-            print('Episode %d (%.2f)%%' % (episode, (episode / float(eval_episodes)) * 100.))
+            print('Episode %d (%.2f)%%' % (episode, (episode / float(repetitions)) * 100.))
+
             obs = env.reset()
             while obs is None:
                 # this can happen if the episode ended with the first

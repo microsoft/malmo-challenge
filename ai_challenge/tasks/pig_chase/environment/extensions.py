@@ -1,7 +1,15 @@
+"""
+This module implements CustomStateBuilder that is used to build state for agents.
+
+To check how coordinates in Minecraft work check out:
+https://microsoft.github.io/malmo/0.21.0/Python_Examples/Tutorial.pdf
+Page 4
+"""
 import logging
 import numpy as np
 import Queue
 
+from ai_challenge.tasks.pig_chase.environment.simulator import EnvSimulator
 from ai_challenge.tasks.pig_chase.environment import PigChaseEnvironment, ENV_BOARD, ENV_ENTITIES, \
     ENV_BOARD_SHAPE, ACTIONS_NUM, BOARD_SIZE, NAME_ENUM, ENT_NUM, BOARD_OFFSET
 
@@ -9,12 +17,6 @@ from ai_challenge.utils import Entity
 from malmopy.environment.malmo import MalmoStateBuilder
 
 logger = logging.getLogger(__name__)
-
-"""
-To check how coordinates in Minecraft work check out:
-https://microsoft.github.io/malmo/0.21.0/Python_Examples/Tutorial.pdf
-Page 4
-"""
 
 
 def transform_incoming(obs, passed_steps, done):
@@ -54,13 +56,19 @@ def transform_incoming(obs, passed_steps, done):
     return ent_dict, passed_steps, done
 
 
-class __BoardRotator(object):
-    def __init__(self):
+class BoardRotator(object):
+    def __init__(self, rememeber_dist_num=10):
         self.state = np.zeros((BOARD_SIZE, BOARD_SIZE, ENT_NUM), dtype=np.float32)
         self.right_top_corner = [(i, j) for i in range(np.ceil(BOARD_SIZE / 2.).astype(np.int32))
                                  for j in range(np.ceil(BOARD_SIZE / 2.).astype(np.int32))]
-
         self.one_hot_matrix = np.eye(4)
+        self.rememeber_dist_num = rememeber_dist_num
+        self.remember_movements = Queue.deque([0] * self.rememeber_dist_num,
+                                              maxlen=rememeber_dist_num)
+
+    def reset(self):
+        self.remember_movements = Queue.deque([0] * self.rememeber_dist_num,
+                                              maxlen=self.rememeber_dist_num)
 
     @staticmethod
     def _rotate_90_counterclockwise(ent_dict):
@@ -81,19 +89,22 @@ class __BoardRotator(object):
         self.state *= 0
         for ent in ent_dict.values():
             self.state[ent.x + BOARD_OFFSET, ent.z + BOARD_OFFSET, NAME_ENUM[ent.name]] = 1
+
+        dist_tp_pig = (np.abs(ent_dict['Pig'].x - ent_dict['Agent_1'].x) + np.abs(
+            ent_dict['Pig'].z - ent_dict['Agent_1'].z)) / (2 * float(BOARD_SIZE))
+        self.remember_movements.append(dist_tp_pig)
         return np.concatenate(
             (self._rot_one_hot_enc(ent_dict['Agent_1'].yaw),
              self._rot_one_hot_enc(ent_dict['Agent_2'].yaw),
-             [pssd_stps / float(ACTIONS_NUM), done, rot_num % 2], self.state.ravel())).astype(
-            np.float32)
-
-
-board_rotator = __BoardRotator()
+             self.state.ravel(),
+             self.remember_movements,
+             [pssd_stps / float(ACTIONS_NUM), done, rot_num % 2])).astype(np.float32)
 
 
 class CustomStateBuilder(MalmoStateBuilder):
-    def __init__(self, entities_override=True):
+    def __init__(self, entities_override=True, remember_dist_len=10):
         self._entities_override = bool(entities_override)
+        self.board_rotator = BoardRotator(remember_dist_len)
 
     def build(self, environment):
         assert isinstance(environment, PigChaseEnvironment), \
@@ -102,10 +113,9 @@ class CustomStateBuilder(MalmoStateBuilder):
         world_obs = environment.world_observations
         if world_obs is None or ENV_BOARD not in world_obs:
             # the function below will deal with it
-            transformed_state = board_rotator.rotate_board_map(world_obs, 0, False)
+            transformed_state = self.board_rotator.rotate_board_map(world_obs, 0, False)
             return transformed_state
 
-        # Generate symbolic view
         board = np.array(world_obs[ENV_BOARD], dtype=object).reshape(
             ENV_BOARD_SHAPE)
         entities = world_obs[ENV_ENTITIES]
@@ -118,8 +128,12 @@ class CustomStateBuilder(MalmoStateBuilder):
         action_count = environment.action_count
         done = environment.done
 
+        if environment.done:
+            self.board_rotator.reset()
+
         try:
-            transformed_state = board_rotator.rotate_board_map(obs_from_env, action_count, done)
+            transformed_state = self.board_rotator.rotate_board_map(obs_from_env, action_count,
+                                                                    done)
         except Exception as e:
             logger.log(msg=e, level=logging.ERROR)
             logger.log(msg='Error in state builder. Last received obs: {}'.format(obs_from_env),
@@ -129,19 +143,127 @@ class CustomStateBuilder(MalmoStateBuilder):
         return transformed_state
 
 
-class ConcatStateBuilder(CustomStateBuilder):
-    def __init__(self, frames_no, state_dim, entities_override=True):
-        super(ConcatStateBuilder, self).__init__(entities_override)
-        self.state_queue = Queue.deque(
-            iterable=[np.zeros((state_dim,), dtype=np.float32)] * frames_no, maxlen=frames_no)
-        self.frames_no = frames_no
-        self.state_dim = state_dim
+class MinecraftSimulator(EnvSimulator):
+    """
+    Class that adds functionality to transform observation to Minecraft-like.
+    """
+    _obs_struct = np.array([[u'grass', u'grass', u'grass', u'grass', u'grass', u'grass',
+                             u'grass', u'grass', u'grass'],
+                            [u'grass', u'sand', u'sand', u'sand', u'sand', u'sand', u'sand',
+                             u'sand', u'grass'],
+                            [u'grass', u'sand', u'grass', u'grass', u'grass', u'grass',
+                             u'grass', u'sand', u'grass'],
+                            [u'sand', u'sand', u'grass', u'sand', u'grass', u'sand',
+                             u'grass', u'sand', u'sand'],
+                            [u'sand', u'lapis_block', u'grass', u'grass', u'grass',
+                             u'grass', u'grass', u'lapis_block', u'sand'],
+                            [u'sand', u'sand', u'grass', u'sand', u'grass', u'sand',
+                             u'grass', u'sand', u'sand'],
+                            [u'grass', u'sand', u'grass', u'grass', u'grass', u'grass',
+                             u'grass', u'sand', u'grass'],
+                            [u'grass', u'sand', u'sand', u'sand', u'sand', u'sand', u'sand',
+                             u'sand', u'grass'],
+                            [u'grass', u'grass', u'grass', u'grass', u'grass', u'grass',
+                             u'grass', u'grass', u'grass']], dtype=object)
 
-    def build(self, environment):
-        self.state_queue.append(super(ConcatStateBuilder, self).build(environment).copy())
-        state = np.concatenate(self.state_queue).copy()
-        if environment.done:
-            self.state_queue = Queue.deque(
-                iterable=[np.zeros((self.state_dim,), dtype=np.float32)] * self.frames_no,
-                maxlen=self.frames_no)
-        return state
+    _ent_data_struct = {u'name': u'None', u'yaw': None, u'pitch': None, u'y': None, u'x': None,
+                        u'z': None}
+
+    _z_offset = 1
+    _x_offset = 1
+
+    def __init__(self, *args, **kwargs):
+        """
+        Initializes the MinecraftSimulator.
+        """
+        super(MinecraftSimulator, self).__init__(*args, **kwargs)
+        self._player_state_rep = self.get_minecraft_state
+        self._opponent_state_rep = self.get_minecraft_state
+
+    @staticmethod
+    def generate_yaw(rot_x, rot_y):
+        """
+        Generates yaw based on rotation vector.
+        :param rot_x: type int, x coordinate of rotation vector
+        :param rot_y: type int, y coordinate of rotation vector
+        :return: type int, generated yaw
+        """
+        if [rot_x, rot_y] == [0, 1]:
+            return 0.
+        elif [rot_x, rot_y] == [1, 0]:
+            return 270.
+        elif [rot_x, rot_y] == [-1, 0]:
+            return 90.
+        elif [rot_x, rot_y] == [0, -1]:
+            return 180.
+
+    def get_minecraft_state(self):
+        """
+        Returns the Minecraft-like observation.
+        :return: type tuple, Minecraft-like observation
+        """
+        gen_board = MinecraftSimulator._obs_struct.copy()
+        ent_lst = []
+        for ent_nm, state in zip(['Agent_1', 'Agent_2', 'Pig'],
+                                 [self.gs.os, self.gs.ps, self.gs.ts]):
+            trans_z, trans_x = state.x + MinecraftSimulator._z_offset, \
+                               state.y + MinecraftSimulator._x_offset
+            gen_board[trans_z, trans_x] += '/' + ent_nm
+            ent_lst.append({u'name': ent_nm, u'yaw': self.generate_yaw(state.rot_x, state.rot_y),
+                            u'x': trans_x, u'z': trans_z})
+        return gen_board, ent_lst
+
+
+class FixedOpponentSimulator(MinecraftSimulator):
+    """
+    Simulator in which the opponent is fixed and observation is Minecraft-like.
+    """
+
+    def __init__(self, opponent, size):
+        """
+        Initializes the simulator.
+        :param opponent: opponent to play against.
+        :param size: type int, the size of the board
+        """
+        self.board_rotator = BoardRotator()
+        super(FixedOpponentSimulator, self).__init__(size)
+        self.opponent = opponent
+        self.opponent_reward = 0
+        self._player_state_rep = self.get_rotated_state
+
+    def step(self, player_action, *args):
+        """
+        Performs the step of the environment.
+        :param player_action: type int, enum representing player's action
+        :return: type tuple, tuple of (new_player_state, reward, done, info)
+        """
+        opponent_action = self.opponent.act(self._opponent_state_rep(), self.opponent_reward,
+                                            self.is_done())
+        _, _, player_rew, self.opponent_reward, done = \
+            super(FixedOpponentSimulator, self).step(player_action, opponent_action)
+        if done:
+            self.opponent.act(self._opponent_state_rep(), self.opponent_reward,
+                              self.is_done())
+            logging.log(
+                msg='Challenge agent using: {}'.format(self.opponent.current_agent.__class__.__name__),
+                level=logging.DEBUG)
+
+        return self._player_state_rep(), player_rew, done, None
+
+    def reset(self):
+        """
+        Resets the environment.
+        :return: type State, new state of the player
+        """
+        self.opponent_reward = 0
+        super(FixedOpponentSimulator, self).reset()
+        self.board_rotator.reset()
+        return self._player_state_rep()
+
+    def get_rotated_state(self):
+        """
+        Gets the rotated state of the board.
+        :return: type numpy array, rotated board.
+        """
+        return self.board_rotator.rotate_board_map(self.get_minecraft_state(), self.pssd_steps,
+                                                   self.done)

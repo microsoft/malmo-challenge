@@ -33,10 +33,7 @@ from malmopy.agent import AStarAgent
 from malmopy.agent import BaseAgent, RandomAgent
 from malmopy.agent.gui import GuiAgent
 
-P_FOCUSED = .75
 CELL_WIDTH = 33
-
-logger = logging.getLogger(__name__)
 
 
 class PigChaseChallengeAgent(BaseAgent):
@@ -46,29 +43,25 @@ class PigChaseChallengeAgent(BaseAgent):
         nb_actions = len(ENV_ACTIONS)
         super(PigChaseChallengeAgent, self).__init__(name, nb_actions,
                                                      visualizer=visualizer)
-
+        self.epi_counter = 0
         self._agents = []
         self._agents.append(FocusedAgent(name, ENV_TARGET_NAMES[0],
                                          visualizer=visualizer))
         self._agents.append(RandomAgent(name, nb_actions,
                                         visualizer=visualizer))
-        self.epi_counter = 0
         self.p_focused = p_focused
-        self._select_agent()
+        self.current_agent = self._select_agent(p_focused)
 
-    def _select_agent(self):
-        self.current_agent = self._agents[np.random.choice(range(len(self._agents)),
-                                                           p=[self.p_focused, 1. - self.p_focused])]
-        if self.can_visualize:
-            self.visualize(self.epi_counter, 'type', self.current_agent.__class__.__name__)
-            self.epi_counter += 1
+    def _select_agent(self, p_focused=0.75):
+        return self._agents[np.random.choice(range(len(self._agents)),
+                                             p=[p_focused, 1. - p_focused])]
 
     def act(self, new_state, reward, done, is_training=False):
         if done:
-            self._select_agent()
-            logging.log(
-                msg='Challenge agent using: {}'.format(self.current_agent.__class__.__name__),
-                level=logging.DEBUG)
+            self.current_agent = self._select_agent(self.p_focused)
+            if self.can_visualize:
+                self.visualize(self.epi_counter, 'type', self.current_agent.__class__.__name__)
+                self.epi_counter += 1
         return self.current_agent.act(new_state, reward, done, is_training)
 
     def save(self, out_dir):
@@ -102,12 +95,10 @@ class FocusedAgent(AStarAgent):
 
         entities = state[1]
         state = state[0]
-
         me = [(j, i) for i, v in enumerate(state) for j, k in enumerate(v) if self.name in k]
         me_details = [e for e in entities if e['name'] == self.name][0]
         yaw = int(me_details['yaw'])
-        direction = ((((
-                           yaw - 45) % 360) // 90) - 1) % 4  # convert Minecraft yaw to 0=north, 1=east etc.
+        direction = ((((yaw - 45) % 360) // 90) - 1) % 4  # convert Minecraft yaw to 0=north, 1=east etc.
         target = [(j, i) for i, v in enumerate(state) for j, k in enumerate(v) if self._target in k]
 
         # Get agent and target nodes
@@ -139,22 +130,18 @@ class FocusedAgent(AStarAgent):
         state_height = state.shape[0]
         dir_north, dir_east, dir_south, dir_west = range(4)
         neighbors = []
-        inc_x = lambda x, dir, delta: x + delta if dir == dir_east \
-            else x - delta if dir == dir_west else x
-        inc_z = lambda z, dir, delta: z + delta if dir == dir_south \
-            else z - delta if dir == dir_north else z
+        inc_x = lambda x, dir, delta: x + delta if dir == dir_east else x - delta if dir == dir_west else x
+        inc_z = lambda z, dir, delta: z + delta if dir == dir_south else z - delta if dir == dir_north else z
         # add a neighbour for each potential action; prune out the disallowed states afterwards
         for action in FocusedAgent.ACTIONS:
             if action.startswith("turn"):
                 neighbors.append(
-                    FocusedAgent.Neighbour(1, pos.x, pos.z,
-                                           (pos.direction + int(action.split(' ')[1])) % 4, action))
+                    FocusedAgent.Neighbour(1, pos.x, pos.z, (pos.direction + int(action.split(' ')[1])) % 4, action))
             if action.startswith("move "):  # note the space to distinguish from movemnorth etc
                 sign = int(action.split(' ')[1])
                 weight = 1 if sign == 1 else 1.5
                 neighbors.append(
-                    FocusedAgent.Neighbour(weight, inc_x(pos.x, pos.direction, sign),
-                                           inc_z(pos.z, pos.direction, sign),
+                    FocusedAgent.Neighbour(weight, inc_x(pos.x, pos.direction, sign), inc_z(pos.z, pos.direction, sign),
                                            pos.direction, action))
             if action == "movenorth":
                 neighbors.append(FocusedAgent.Neighbour(1, pos.x, pos.z - 1, pos.direction, action))
@@ -167,8 +154,7 @@ class FocusedAgent(AStarAgent):
 
         # now prune:
         valid_neighbours = [n for n in neighbors if
-                            n.x >= 0 and n.x < state_width and n.z >= 0 and n.z < state_height and
-                            state[
+                            n.x >= 0 and n.x < state_width and n.z >= 0 and n.z < state_height and state[
                                 n.z, n.x] != 'sand']
         return valid_neighbours
 
@@ -198,8 +184,7 @@ class PigChaseHumanAgent(GuiAgent):
 
     def _build_layout(self, root):
         # Left part of the GUI, first person view
-        self._first_person_header = ttk.Label(root, text='First Person View',
-                                              font=(None, 14, 'bold')) \
+        self._first_person_header = ttk.Label(root, text='First Person View', font=(None, 14, 'bold')) \
             .grid(row=0, column=0)
         self._first_person_view = ttk.Label(root)
         self._first_person_view.grid(row=1, column=0, rowspan=10)
@@ -292,22 +277,16 @@ class PigChaseHumanAgent(GuiAgent):
                     for block in cell_contents:
                         if block == 'sand':
                             self._symbolic_view.create_rectangle(x * cell_width, y * cell_width,
-                                                                 (x + 1) * cell_width,
-                                                                 (y + 1) * cell_width,
-                                                                 outline="black", fill="orange",
-                                                                 tags="square")
+                                                                 (x + 1) * cell_width, (y + 1) * cell_width,
+                                                                 outline="black", fill="orange", tags="square")
                         elif block == 'grass':
                             self._symbolic_view.create_rectangle(x * cell_width, y * cell_width,
-                                                                 (x + 1) * cell_width,
-                                                                 (y + 1) * cell_width,
-                                                                 outline="black", fill="lawn green",
-                                                                 tags="square")
+                                                                 (x + 1) * cell_width, (y + 1) * cell_width,
+                                                                 outline="black", fill="lawn green", tags="square")
                         elif block == 'lapis_block':
                             self._symbolic_view.create_rectangle(x * cell_width, y * cell_width,
-                                                                 (x + 1) * cell_width,
-                                                                 (y + 1) * cell_width,
-                                                                 outline="black", fill="black",
-                                                                 tags="square")
+                                                                 (x + 1) * cell_width, (y + 1) * cell_width,
+                                                                 outline="black", fill="black", tags="square")
                         elif block == ENV_TARGET_NAMES[0]:
                             self._symbolic_view.create_oval((x + .5) * cell_width - circle_radius,
                                                             (y + .5) * cell_width - circle_radius,
@@ -321,8 +300,7 @@ class PigChaseHumanAgent(GuiAgent):
                             # Get yaw of other agent:
                             entities = self._env._world_obs[ENV_ENTITIES]
                             other_agent = list(
-                                map(Entity.create,
-                                    filter(lambda e: e['name'] == ENV_AGENT_NAMES[0], entities)))
+                                map(Entity.create, filter(lambda e: e['name'] == ENV_AGENT_NAMES[0], entities)))
                             if len(other_agent) == 1:
                                 other_agent = other_agent.pop()
                                 yaw = other_agent.yaw % 360
@@ -374,8 +352,7 @@ class PigChaseHumanAgent(GuiAgent):
                 font=('Helvetica', '18'))
             if self._episode > 1:
                 self._init_overlay.create_text(
-                    300, 160,
-                    text='Average over %d episodes: %.2f' % (self._episode, np.mean(self._scores)),
+                    300, 160, text='Average over %d episodes: %.2f' % (self._episode, np.mean(self._scores)),
                     font=('Helvetica', '18'))
             self._init_overlay.create_text(
                 300, 220, width=360,
@@ -390,8 +367,7 @@ class PigChaseHumanAgent(GuiAgent):
         self._root.after(self._tick, self._poll_frame)
 
     def _create_overlay(self):
-        self._init_overlay = Canvas(self._root, borderwidth=0, highlightthickness=0, width=600,
-                                    height=300, bg="gray")
+        self._init_overlay = Canvas(self._root, borderwidth=0, highlightthickness=0, width=600, height=300, bg="gray")
         self._init_overlay.place(relx=0.5, rely=0.5, anchor='center')
 
     def _destroy_overlay(self):
@@ -457,8 +433,7 @@ class PigChaseHumanAgent(GuiAgent):
         self._cum_reward_lbl.config(text='Score: %d' % sum(self._rewards))
         self._last_action_lbl.config(text='Previous action: %s' % action)
         self._action_done_lbl.config(text='Actions taken: {0}'.format(self._action_taken))
-        self._action_remaining_lbl.config(
-            text='Actions remaining: %d' % (self._max_actions - self._action_taken))
+        self._action_remaining_lbl.config(text='Actions remaining: %d' % (self._max_actions - self._action_taken))
         self._first_person_view.update()
 
     def _quit(self):

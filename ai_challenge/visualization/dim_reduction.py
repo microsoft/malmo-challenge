@@ -1,3 +1,7 @@
+"""
+Module containing functions allowing to visualize states passed through NN which is used.
+"""
+
 import os
 import numpy as np
 import pickle
@@ -19,7 +23,7 @@ def traj_2_array(traj_dict, feature_nm):
             value = values_dict[feature_nm]
             data.append(value)
             traj_ind.append(traj_no)
-    return np.concatenate(data), np.array(traj_ind)
+    return np.array(data), np.array(traj_ind)
 
 
 def reconstruct_traj(data, traj_ind):
@@ -39,11 +43,11 @@ def fit_dim_red(traj_dict_fn, n_comp, feature_nm, opponent_type_fn=None):
             opponent_type = pd.read_csv(handle)['type']
             opponent_type = [1 if opp == 'FocusedAgent' else 0 for opp in list(opponent_type)]
     data, traj_ind = traj_2_array(traj_dict, feature_nm)
-    data_scaled = data
-    models = ['PCA', 'Isomap']  # ['TSNE', 'Isomap', 'PCA']
-    fig, ax = plt.subplots(nrows=1, ncols=len(models))
+    data_scaled = data[:, 0, :]
+    models = ['TSNE', 'Isomap', 'PCA']
 
-    for dim_red, col in zip(models, ax):
+    for dim_red in models:
+        fig = plt.figure()
         print('Fitting: ', dim_red)
         if hasattr(manifold, dim_red):
             dim_red_model = getattr(manifold, dim_red)(n_components=n_comp)
@@ -55,15 +59,15 @@ def fit_dim_red(traj_dict_fn, n_comp, feature_nm, opponent_type_fn=None):
                 'in sklearn.mainfold or sklearn.decomposition.')
         trans_data = dim_red_model.fit_transform(data_scaled)
         trans_traj_data = reconstruct_traj(trans_data, traj_ind)
+
         for index, traj in trans_traj_data.items():
             point_type = '.b'
             if opponent_type_fn is not None:
                 opp_typ = opponent_type[index]
-                point_type = '.r' if opp_typ == 0 else '.b'
+                point_type = '.r' if int(opp_typ) == 1 else '.b'
             for step, point in enumerate(traj):
-                col.plot(point[0], point[1], point_type)
-        col.set_title(dim_red)
+                plt.plot(point[0], point[1], point_type, markersize=1)
+        fig.suptitle(dim_red)
 
-    path, f_name = os.path.split(traj_dict_fn)
-
-    plt.savefig(os.path.join(get_results_path(), path, feature_nm + '_dim_red_plot.png'))
+        path, f_name = os.path.split(traj_dict_fn)
+        plt.savefig(os.path.join(get_results_path(), path, feature_nm + dim_red+  '_dim_red_plot.png'))

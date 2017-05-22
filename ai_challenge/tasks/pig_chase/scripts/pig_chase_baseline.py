@@ -86,8 +86,6 @@ def agent_factory(name, role, baseline_agent, clients, max_epochs,
 
     else:
 
-
-
         obs = env.reset()
         reward = 0
         agent_done = False
