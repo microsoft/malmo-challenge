@@ -17,8 +17,9 @@
 
 from common import ENV_AGENT_NAMES
 from evaluation import PigChaseEvaluator
-from environment import PigChaseTopDownStateBuilder
+from environment import PigChaseTopDownStateBuilder, PigChaseSymbolicStateBuilder
 from malmopy.agent import RandomAgent
+from agent import PigChaseChallengeAgent
 
 
 if __name__ == '__main__':
@@ -27,7 +28,7 @@ if __name__ == '__main__':
     clients = [('127.0.0.1', 10000), ('127.0.0.1', 10001)]
     agent = RandomAgent(ENV_AGENT_NAMES[1], 3)
 
-    eval = PigChaseEvaluator(clients, agent, agent, PigChaseTopDownStateBuilder())
+    eval = PigChaseEvaluator(clients, agent, agent, PigChaseSymbolicStateBuilder())
     eval.run()
 
     eval.save('My Exp 1', 'pig_chase_results.json')

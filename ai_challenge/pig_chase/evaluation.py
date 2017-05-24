@@ -21,6 +21,7 @@ from time import sleep
 
 from common import parse_clients_args, ENV_AGENT_NAMES
 from agent import PigChaseChallengeAgent
+from malmopy.agent import RandomAgent
 from common import ENV_AGENT_NAMES
 from environment import PigChaseEnvironment, PigChaseSymbolicStateBuilder
 
@@ -122,23 +123,35 @@ def agent_loop(agent, env, metrics_acc):
     obs = env.reset()
 
     while episode < EVAL_EPISODES:
+
+	# select an action
+        action = agent.act(obs, reward, agent_done, is_training=True)
+        
+        # take a step
+        obs, reward, agent_done = env.do(action)
+
         # check if env needs reset
         if env.done:
             print('Episode %d (%.2f)%%' % (episode, (episode / EVAL_EPISODES) * 100.))
+            action = agent.act(obs, reward, agent_done, is_training=True)
+            if hasattr(agent,'current_agent'):
+               if type(agent.current_agent) == RandomAgent:
+                    agent_type = PigChaseEnvironment.AGENT_TYPE_1
+               else:
+                    agent_type = PigChaseEnvironment.AGENT_TYPE_2
+            else:
+                agent_type=PigChaseEnvironment.AGENT_TYPE_1
 
-            obs = env.reset()
+            obs = env.reset(agent_type)
+
             while obs is None:
                 # this can happen if the episode ended with the first
                 # action of the other agent
                 print('Warning: received obs == None.')
-                obs = env.reset()
+                obs = env.reset(agent_type)
 
             episode += 1
-
-        # select an action
-        action = agent.act(obs, reward, agent_done, is_training=True)
-        # take a step
-        obs, reward, agent_done = env.do(action)
+        
 
         if metrics_acc is not None:
             metrics_acc.append(reward)
