@@ -19,12 +19,13 @@ from __future__ import division
 
 import sys
 import time
+import pickle
 from collections import namedtuple
 from tkinter import ttk, Canvas, W
 
 import numpy as np
 from common import visualize_training, Entity, ENV_TARGET_NAMES, ENV_ENTITIES, ENV_AGENT_NAMES, \
-    ENV_ACTIONS, ENV_CAUGHT_REWARD, ENV_BOARD_SHAPE
+    ENV_ACTIONS, ENV_CAUGHT_REWARD, ENV_BOARD_SHAPE, ENV_AGENT_TYPES
 from six.moves import range
 
 from malmopy.agent import AStarAgent
@@ -34,6 +35,88 @@ from malmopy.agent.gui import GuiAgent
 P_FOCUSED = .75
 CELL_WIDTH = 33
 
+def get_agent_type(agent):
+    if isinstance(agent, PigChaseChallengeAgent):
+        agent = agent.current_agent
+    if isinstance(agent, RandomAgent):
+        return ENV_AGENT_TYPES.RANDOM
+    elif isinstance(agent, FocusedAgent):
+        return ENV_AGENT_TYPES.FOCUSED
+    elif isinstance(agent, TabularQLearnerAgent):
+        return ENV_AGENT_TYPES.TABQ
+    elif isinstance(agent, PigChaseHumanAgent):
+        return ENV_AGENT_TYPES.HUMAN
+    else:
+        return ENV_AGENT_TYPES.OTHER
+
+class TabularQLearnerAgent(BaseAgent):
+    """Pig Chase agent - uses Tabular Q-Learning."""
+
+    def __init__(self, name, visualizer=None):
+        nb_actions = len(ENV_ACTIONS)
+        super(TabularQLearnerAgent, self).__init__(name, nb_actions, visualizer = visualizer)
+        self._QTable = {}
+        self._last_hash = None
+        self._last_action_index = None
+        self._learning_rate = 0.5
+        self._discount_rate = 0.99
+        self._epsilon = 0.1
+        self._rewards = []
+
+    def _get_state_hash(self, state):
+        entities = state[1]
+        hash = ""
+        for ent in sorted(entities, key=lambda x: x['name']):
+            x = str(int(ent['x']))
+            z = str(int(ent['z']))
+            yaw = str(int(ent['yaw']/90.0) % 4)
+            hash += x + "_" + z + "_" + yaw + ":" if ent['name'] in ENV_AGENT_NAMES else x + "_" + z + ":" if ent['name'] in ENV_TARGET_NAMES else ""
+        return hash
+
+    def act(self, new_state, reward, done, is_training=False):
+        self._rewards.append(reward)
+        new_hash = self._get_state_hash(new_state)
+        if not new_hash in self._QTable:
+            self._QTable[new_hash] = [0.0 for act in ENV_ACTIONS]
+        new_qvalues = self._QTable[new_hash]
+        new_max_q = max(new_qvalues)
+
+        # Update step:
+        if self._last_hash is not None:
+            old_qvalues = self._QTable[self._last_hash]
+            if not done:
+                delta = self._learning_rate * ((reward + self._discount_rate * new_max_q) - old_qvalues[self._last_action_index])
+                old_qvalues[self._last_action_index] += delta
+            else:
+                old_qvalues[self._last_action_index] = reward
+            self._QTable[self._last_hash] = old_qvalues
+            if new_hash == self._last_hash:
+                new_max_q = max(new_qvalues)    # refresh our max qvalue
+
+        # Choose best action for this step:
+        top_q_indices = [i for i, val in enumerate(new_qvalues) if val == new_max_q]
+        self._last_action_index = np.random.randint(len(ENV_ACTIONS)) if np.random.rand() < self._epsilon else np.random.choice(top_q_indices)
+        self._last_hash = new_hash
+        return self._last_action_index
+
+    def inject_summaries(self, idx):
+        self.visualize(idx, "%s/episode mean reward" % self.name, np.asscalar(np.mean(self._rewards)))
+        qvalues = np.empty((len(self._QTable), len(ENV_ACTIONS)))
+        for i, key in enumerate(self._QTable):
+            qvalues[i] = self._QTable[key]
+        self.visualize(idx, "%s/episode mean q" % self.name, np.asscalar(np.mean(qvalues)))
+        self.visualize(idx, "%s/episode mean stddev q" % self.name, np.asscalar(np.std(qvalues)))
+        self._rewards = []
+
+    def save(self, out_dir):
+        outfile = open(out_dir, 'wb')
+        pickle.dump(self._QTable, outfile)
+        outfile.close()
+
+    def load(self, out_dir):
+        infile = open(out_dir, 'rb')
+        self._QTable = pickle.load(infile)
+        infile.close()
 
 class PigChaseQLearnerAgent(QLearnerAgent):
     """A thin wrapper around QLearnerAgent that normalizes rewards to [-1,1]"""
@@ -43,7 +126,6 @@ class PigChaseQLearnerAgent(QLearnerAgent):
         reward /= ENV_CAUGHT_REWARD
         return super(PigChaseQLearnerAgent, self).act(state, reward, done,
                                                       is_training)
-
 
 class PigChaseChallengeAgent(BaseAgent):
     """Pig Chase challenge agent - behaves focused or random."""

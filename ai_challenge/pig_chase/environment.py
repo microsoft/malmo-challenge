@@ -23,7 +23,7 @@ import re
 import numpy as np
 
 from common import Entity, ENV_ACTIONS, ENV_BOARD, ENV_ENTITIES, \
-    ENV_BOARD_SHAPE, ENV_AGENT_NAMES
+    ENV_BOARD_SHAPE, ENV_AGENT_NAMES, ENV_AGENT_TYPES
 
 from MalmoPython import MissionSpec
 from malmopy.environment.malmo import MalmoEnvironment, MalmoStateBuilder
@@ -157,18 +157,13 @@ class PigChaseEnvironment(MalmoEnvironment):
     the pig (high reward), or give up by leaving the pig pen (low reward).
     """
 
-    AGENT_TYPE_0 = 0
-    AGENT_TYPE_1 = 1
-    AGENT_TYPE_2 = 2
-    AGENT_TYPE_3 = 3
-
     VALID_START_POSITIONS = [
-        (2.5, 1.5), (3.5, 1.5), (4.5, 1.5), (5.5, 1.5), (6.5, 1.5),
-        (2.5, 2.5), (4.5, 2.5), (6.5, 2.5),
-        (2.5, 3.5), (3.5, 3.5), (4.5, 3.5), (5.5, 3.5), (6.5, 3.5),
-        (2.5, 4.5), (4.5, 4.5), (6.5, 4.5),
-        (2.5, 5.5), (3.5, 5.5), (4.5, 5.5), (5.5, 5.5), (6.5, 5.5)
-    ]
+        (2.5,1.5), (3.5,1.5), (4.5,1.5), (5.5,1.5), (6.5,1.5),
+        (2.5,2.5),            (4.5,2.5),            (6.5,2.5),
+                   (3.5,3.5), (4.5,3.5), (5.5,3.5),
+        (2.5,4.5),            (4.5,4.5),            (6.5,4.5),
+        (2.5,5.5), (3.5,5.5), (4.5,5.5), (5.5,5.5), (6.5,5.5)
+        ]
     VALID_YAW = [0, 90, 180, 270]
 
     def __init__(self, remotes,
@@ -194,6 +189,7 @@ class PigChaseEnvironment(MalmoEnvironment):
 
         self._randomize_positions = randomize_positions
         self._agent_type = None
+        self._print_state_diagnostics = False
 
     @property
     def state(self):
@@ -212,14 +208,15 @@ class PigChaseEnvironment(MalmoEnvironment):
         if self._role == 0:
             original_helmet = "diamond_helmet"
         new_helmet = original_helmet
-        if self._agent_type == PigChaseEnvironment.AGENT_TYPE_0:
-            new_helmet = "iron_helmet"
-        elif self._agent_type == PigChaseEnvironment.AGENT_TYPE_1:
+        if self._agent_type == ENV_AGENT_TYPES.RANDOM:
             new_helmet = "golden_helmet"
-        elif self._agent_type == PigChaseEnvironment.AGENT_TYPE_2:
+        elif self._agent_type == ENV_AGENT_TYPES.FOCUSED:
             new_helmet = "diamond_helmet"
-        elif self._agent_type == PigChaseEnvironment.AGENT_TYPE_3:
+        elif self._agent_type == ENV_AGENT_TYPES.HUMAN:
             new_helmet = "leather_helmet"
+        else:
+            new_helmet = "iron_helmet"
+
         xml = re.sub(r'type="%s"' % original_helmet,
                      r'type="%s"' % new_helmet, self._mission_xml)
         # set agent starting pos
@@ -273,12 +270,32 @@ class PigChaseEnvironment(MalmoEnvironment):
         state, reward, done = super(PigChaseEnvironment, self).do(action)
         return state, reward, self.done
 
+    def _debug_output(self, str):
+        if self._print_state_diagnostics:
+            print(str)
+
     def is_valid(self, world_state):
         """ Pig Chase Environment is valid if the the board and entities are present """
 
-        if super(PigChaseEnvironment, self).is_valid(world_state):
-            obs = json.loads(world_state.observations[-1].text)
+        if not super(PigChaseEnvironment, self).is_valid(world_state):
+            return False
 
-            # Check we have entities
-            return (ENV_ENTITIES in obs) and (ENV_BOARD in obs)
-        return False
+        # Check we have entities
+        obs = json.loads(world_state.observations[-1].text)
+        if not (ENV_ENTITIES in obs) or not (ENV_BOARD in obs):
+            return False
+
+        # Check agent entities are correctly positioned:
+        entities = obs[ENV_ENTITIES]
+        for ent in entities:
+            if ent['name'] in ENV_AGENT_NAMES:
+                if abs((ent['x'] - int(ent['x'])) - 0.5) > 0.01:
+                    self._debug_output("Waiting for " + ent['name'] + " x - currently " + str(ent['x']))
+                    return False
+                if abs((ent['z'] - int(ent['z'])) - 0.5) > 0.01:
+                    self._debug_output("Waiting for " + ent['name'] + " z - currently " + str(ent['z']))
+                    return False
+                if (int(ent['yaw']) % 90) != 0:
+                    self._debug_output("Waiting for " + ent['name'] + " yaw - currently " + str(ent['yaw']))
+                    return False
+        return True

@@ -31,15 +31,13 @@ from malmopy.visualization import ConsoleVisualizer
 sys.path.insert(0, os.getcwd())
 sys.path.insert(1, os.path.join(os.path.pardir, os.getcwd()))
 
-from common import parse_clients_args, ENV_AGENT_NAMES, ENV_ACTIONS
-from agent import PigChaseChallengeAgent, PigChaseHumanAgent
+from common import parse_clients_args, ENV_AGENT_NAMES, ENV_ACTIONS, ENV_AGENT_TYPES
+from agent import PigChaseChallengeAgent, PigChaseHumanAgent, TabularQLearnerAgent, FocusedAgent, get_agent_type
 from environment import PigChaseEnvironment, PigChaseSymbolicStateBuilder
 
-EXPERIMENT_NAME = 'Pig_Chase_2xAStar'
 MAX_ACTIONS = 25 # this should match the mission definition, used for display only
 
-
-def agent_factory(name, role, kind, clients, max_episodes, max_actions, logdir, quit):
+def agent_factory(name, role, kind, clients, max_episodes, max_actions, logdir, quit, model_file):
     assert len(clients) >= 2, 'There are not enough Malmo clients in the pool (need at least 2)'
 
     clients = parse_clients_args(clients)
@@ -49,13 +47,18 @@ def agent_factory(name, role, kind, clients, max_episodes, max_actions, logdir, 
         env = PigChaseEnvironment(clients, PigChaseSymbolicStateBuilder(),
                                   actions=ENV_ACTIONS, role=role,
                                   human_speed=True, randomize_positions=True)
-        agent = PigChaseChallengeAgent(name)
-
-        if type(agent.current_agent) == RandomAgent:
-            agent_type = PigChaseEnvironment.AGENT_TYPE_1
+        if kind == 'challenge':
+            agent = PigChaseChallengeAgent(name)
+        elif kind == 'astar':
+            agent = FocusedAgent(name, ENV_TARGET_NAMES[0])
+        elif kind == 'tabq':
+            agent = TabularQLearnerAgent(name)
+            if model_file != '':
+                agent.load(model_file)
         else:
-            agent_type = PigChaseEnvironment.AGENT_TYPE_2
-        obs = env.reset(agent_type)
+            agent = RandomAgent(name ,env.available_actions)
+
+        obs = env.reset(get_agent_type(agent))
         reward = 0
         rewards = []
         done = False
@@ -71,11 +74,7 @@ def agent_factory(name, role, kind, clients, max_episodes, max_actions, logdir, 
                 rewards = []
                 episode += 1
 
-                if type(agent.current_agent) == RandomAgent:
-                    agent_type = PigChaseEnvironment.AGENT_TYPE_1
-                else:
-                    agent_type = PigChaseEnvironment.AGENT_TYPE_2
-                obs = env.reset(agent_type)
+                obs = env.reset(get_agent_type(agent))
 
             # take a step
             obs, reward, done = env.do(action)
@@ -85,7 +84,7 @@ def agent_factory(name, role, kind, clients, max_episodes, max_actions, logdir, 
         env = PigChaseEnvironment(clients, PigChaseSymbolicStateBuilder(),
                                   actions=list(ARROW_KEYS_MAPPING.values()),
                                   role=role, randomize_positions=True)
-        env.reset(PigChaseEnvironment.AGENT_TYPE_3)
+        env.reset(ENV_AGENT_TYPES.HUMAN)
 
         agent = PigChaseHumanAgent(name, env, list(ARROW_KEYS_MAPPING.keys()),
                                    max_episodes, max_actions, visualizer, quit)
@@ -114,15 +113,16 @@ def run_mission(agents_def):
 if __name__ == '__main__':
     arg_parser = ArgumentParser()
     arg_parser.add_argument('-e', '--episodes', type=int, default=10, help='Number of episodes to run.')
-    arg_parser.add_argument('-k', '--kind', type=str, default='astar', choices=['astar', 'random'],
-                            help='The kind of agent to play with (random or astar).')
+    arg_parser.add_argument('-k', '--kind', type=str, default='challenge', choices=['astar', 'random', 'tabq', 'challenge'],
+                            help='The kind of agent to play with (random, astar, tabq or challenge).')
+    arg_parser.add_argument('-m', '--model_file', type=str, default='', help='Model file with which to initialise agent, if appropriate')
     arg_parser.add_argument('clients', nargs='*',
                             default=['127.0.0.1:10000', '127.0.0.1:10001'],
                             help='Malmo clients (ip(:port)?)+')
     args = arg_parser.parse_args()
 
     logdir = path.join('results/pig-human', datetime.utcnow().isoformat())
-    agents = [{'name': agent, 'role': role, 'kind': args.kind,
+    agents = [{'name': agent, 'role': role, 'kind': args.kind, 'model_file': args.model_file,
                'clients': args.clients, 'max_episodes': args.episodes,
                'max_actions': MAX_ACTIONS, 'logdir': logdir}
               for role, agent in enumerate(ENV_AGENT_NAMES)]

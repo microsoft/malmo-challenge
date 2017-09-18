@@ -26,6 +26,7 @@ import six
 from os import path
 from threading import Thread, active_count
 from time import sleep
+from builtins import range
 
 from malmopy.agent import RandomAgent
 try:
@@ -36,7 +37,7 @@ except ImportError:
     from malmopy.visualization import ConsoleVisualizer
 
 from common import parse_clients_args, visualize_training, ENV_AGENT_NAMES, ENV_TARGET_NAMES
-from agent import PigChaseChallengeAgent, FocusedAgent
+from agent import PigChaseChallengeAgent, FocusedAgent, TabularQLearnerAgent, get_agent_type
 from environment import PigChaseEnvironment, PigChaseSymbolicStateBuilder
 
 # Enforce path
@@ -59,28 +60,24 @@ def agent_factory(name, role, baseline_agent, clients, max_epochs,
 
     if role == 0:
         agent = PigChaseChallengeAgent(name)
-
-        if type(agent.current_agent) == RandomAgent:
-            agent_type = PigChaseEnvironment.AGENT_TYPE_1
-        else:
-            agent_type = PigChaseEnvironment.AGENT_TYPE_2
-        obs = env.reset(agent_type)
+        obs = env.reset(get_agent_type(agent))
 
         reward = 0
         agent_done = False
 
         while True:
+            if env.done:
+                while True:
+                    obs = env.reset(get_agent_type(agent))
+                    if obs:
+                        break
 
             # select an action
             action = agent.act(obs, reward, agent_done, is_training=True)
 
             # reset if needed
             if env.done:
-                if type(agent.current_agent) == RandomAgent:
-                    agent_type = PigChaseEnvironment.AGENT_TYPE_1
-                else:
-                    agent_type = PigChaseEnvironment.AGENT_TYPE_2
-                obs = env.reset(agent_type)
+                obs = env.reset(get_agent_type(agent))
 
             # take a step
             obs, reward, agent_done = env.do(action)
@@ -88,7 +85,9 @@ def agent_factory(name, role, baseline_agent, clients, max_epochs,
 
     else:
 
-        if baseline_agent == 'astar':
+        if baseline_agent == 'tabq':
+            agent = TabularQLearnerAgent(name, visualizer)
+        elif baseline_agent == 'astar':
             agent = FocusedAgent(name, ENV_TARGET_NAMES[0])
         else:
             agent = RandomAgent(name, env.available_actions)
@@ -103,10 +102,20 @@ def agent_factory(name, role, baseline_agent, clients, max_epochs,
 
             # check if env needs reset
             if env.done:
-
-                visualize_training(visualizer, step, viz_rewards)
-                viz_rewards = []
-                obs = env.reset()
+                while True:
+                    if len(viz_rewards) == 0:
+                        viz_rewards.append(0)
+                    visualize_training(visualizer, step, viz_rewards)
+                    tag = "Episode End Conditions"
+                    visualizer.add_entry(step, '%s/timeouts per episode' % tag, env.end_result == "command_quota_reached")
+                    visualizer.add_entry(step, '%s/agent_1 defaults per episode' % tag, env.end_result == "Agent_1_defaulted")
+                    visualizer.add_entry(step, '%s/agent_2 defaults per episode' % tag, env.end_result == "Agent_2_defaulted")
+                    visualizer.add_entry(step, '%s/pig caught per episode' % tag, env.end_result == "caught_the_pig")
+                    agent.inject_summaries(step)
+                    viz_rewards = []
+                    obs = env.reset()
+                    if obs:
+                        break
 
             # select an action
             action = agent.act(obs, reward, agent_done, is_training=True)
@@ -114,7 +123,7 @@ def agent_factory(name, role, baseline_agent, clients, max_epochs,
             obs, reward, agent_done = env.do(action)
             viz_rewards.append(reward)
 
-            agent.inject_summaries(step)
+            #agent.inject_summaries(step)
 
 
 def run_experiment(agents_def):
@@ -144,7 +153,7 @@ def run_experiment(agents_def):
 if __name__ == '__main__':
     arg_parser = ArgumentParser('Pig Chase baseline experiment')
     arg_parser.add_argument('-t', '--type', type=str, default='astar',
-                            choices=['astar', 'random'],
+                            choices=['tabq', 'astar', 'random'],
                             help='The type of baseline to run.')
     arg_parser.add_argument('-e', '--epochs', type=int, default=5,
                             help='Number of epochs to run.')
